@@ -381,7 +381,6 @@ function renderBoard(){
       const tile = document.createElement('div');
       tile.className = 'tile';
       tile.id = `tile-${r}-${c}`;
-      // click to select tile
       tile.addEventListener('click', ()=>selectTile(r,c));
       tile.addEventListener('touchstart', (e)=>{ e.preventDefault(); selectTile(r,c); }, {passive:false});
       row.appendChild(tile);
@@ -389,7 +388,6 @@ function renderBoard(){
     boardDiv.appendChild(row);
   }
   boardWrap.appendChild(boardDiv);
-  // select first tile by default
   selectTile(currentRow, currentCol);
 }
 }
@@ -438,10 +436,13 @@ function renderKeyboard(){
 function handleKey(ch){
   if(gameOver) return;
   soundTap();
-  // write in selected tile
   if(currentCol >= 0 && currentCol < 5){
     board[currentRow][currentCol] = ch;
     const tile = document.getElementById(`tile-${currentRow}-${currentCol}`);
+    tile.textContent = ch;
+    if(currentCol < 4) selectTile(currentRow, currentCol+1);
+  }
+}-${currentCol}`);
     tile.textContent = ch;
     // move selection to next tile
     if(currentCol < 4) selectTile(currentRow, currentCol+1);
@@ -454,10 +455,13 @@ function handleKey(ch){
 function onBack(){
   if(gameOver) return;
   soundTap();
-  if(currentCol > 0 || board[currentRow][currentCol]){
-    // clear current tile
+  if(currentCol >= 0){
     board[currentRow][currentCol] = '';
     const tile = document.getElementById(`tile-${currentRow}-${currentCol}`);
+    tile.textContent = '';
+    if(currentCol > 0) selectTile(currentRow, currentCol-1);
+  }
+}-${currentCol}`);
     tile.textContent = '';
     // move selection left if possible
     if(currentCol > 0) selectTile(currentRow, currentCol-1);
@@ -469,13 +473,8 @@ function onBack(){
 function onEnter(){
   if(gameOver) return;
   soundEnter();
-  // ensure row is complete
   const guess = board[currentRow].join('');
   if(guess.length < 5 || board[currentRow].some(c=>c==='')) return;
-  if(gameOver) return;
-  soundEnter();
-  const guess = board[currentRow].join('');
-  if(guess.length < 5) return;
 
   revealRow(guess);
 
@@ -486,6 +485,17 @@ function onEnter(){
     setTimeout(()=>showModal('win', solution), 1200);
     return;
   }
+
+  currentRow++;
+  currentCol = 0;
+  if(currentRow < 6) selectTile(currentRow, currentCol);
+
+  if(currentRow >= 6){
+    gameOver = true;
+    soundLose();
+    setTimeout(()=>showModal('lose', solution), 600);
+  }
+}
 
   currentRow++;
   currentCol = 0;
