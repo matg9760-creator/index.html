@@ -83,6 +83,10 @@ h1{letter-spacing:4px}
 
 <script>
 document.addEventListener("DOMContentLoaded",()=>{
+  // Enable physical keyboard focus
+  document.body.setAttribute('tabindex','0');
+  document.body.focus();
+
 
 const WORDS = ["AMOUR","MAISON","FRUIT","ECOLE","POINT","BLANC","ROUGE","BLEU","NOIR","TABLE"];
 let solution="";
@@ -220,6 +224,30 @@ function showModal(title,text){
 function closeModal(){
   document.getElementById("modal").style.display="none";
   startGame();
+
+  // ===== Physical keyboard support (A–Z + accents) =====
+  window.addEventListener('keydown', (e) => {
+    if(gameOver) return;
+    if(e.key === 'Enter'){ onEnter(); return; }
+    if(e.key === 'Backspace'){ onBack(); return; }
+
+    const map = {
+      'é':'E','è':'E','ê':'E','ë':'E',
+      'à':'A','â':'A','ä':'A',
+      'î':'I','ï':'I',
+      'ô':'O','ö':'O',
+      'ù':'U','û':'U','ü':'U',
+      'ç':'C'
+    };
+
+    let key = e.key;
+    if(map[key]) key = map[key];
+    else key = key.toUpperCase();
+
+    if(/^[A-Z]$/.test(key)){
+      handleKey(key);
+    }
+  });
 
 // ===== Physical keyboard support (A–Z + accents) =====
 window.addEventListener('keydown', e => {
