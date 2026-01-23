@@ -1,9 +1,9 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="utf-8">
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Wordle FR – Version Stable</title>
+<title>Wordle FR – Clone fidèle</title>
 <style>
 :root{
   --bg:#121213;
@@ -18,536 +18,211 @@ body{
   margin:0;
   background:var(--bg);
   color:var(--text);
+  font-family:system-ui, Arial, sans-serif;
   display:flex;
   justify-content:center;
-  font-family:system-ui, Arial, sans-serif;
 }
-.app{ width:100%; max-width:420px; padding:10px; }
-header{ text-align:center; margin:10px 0; }
-h1{ letter-spacing:4px; margin:0; }
+.app{width:100%;max-width:420px;padding:10px}
+header{text-align:center}
+h1{letter-spacing:4px;margin:10px 0}
 
-.board{ display:flex; flex-direction:column; gap:6px; align-items:center; }
-.row{ display:flex; gap:6px; }
+.board{display:flex;flex-direction:column;gap:6px;align-items:center}
+.row{display:flex;gap:6px}
 .tile{
-  width:56px; height:56px;
+  width:56px;height:56px;
   border:2px solid var(--border);
   background:var(--tile);
-  display:flex; align-items:center; justify-content:center;
-  font-size:28px; font-weight:bold;
+  display:flex;align-items:center;justify-content:center;
+  font-size:28px;font-weight:bold;
+  user-select:none;
 }
-.tile.active{ border-color:#5383ff; }
+.tile.green{background:var(--green);border-color:var(--green);color:#fff}
+.tile.yellow{background:var(--yellow);border-color:var(--yellow);color:#fff}
+.tile.gray{background:var(--gray);border-color:var(--gray);color:#fff}
 
-.keyboard{ margin-top:18px; }
-.kb-row{ display:flex; justify-content:center; gap:5px; margin-bottom:6px; }
+.keyboard{margin-top:18px}
+.kb-row{display:flex;justify-content:center;gap:5px;margin-bottom:6px}
 .key{
-  background:#818384; color:white;
-  padding:10px; border-radius:4px;
-  font-weight:bold; min-width:28px; text-align:center;
-  cursor:pointer; user-select:none;
+  background:#818384;color:white;
+  padding:10px;border-radius:4px;
+  font-weight:bold;min-width:28px;text-align:center;
+  cursor:pointer;user-select:none
 }
-.key.wide{ min-width:50px; }
-.key.green{ background:var(--green); }
-.key.yellow{ background:var(--yellow); }
-.key.dark{ background:#1f1f1f; color:#777; }
+.key.wide{min-width:50px}
+.key.green{background:var(--green)}
+.key.yellow{background:var(--yellow)}
+.key.gray{background:#1f1f1f;color:#777}
 
-/* Popup */
-.modal-overlay{
-  position:fixed; inset:0;
-  background:rgba(0,0,0,.6);
-  display:none; align-items:center; justify-content:center;
-}
-.modal{ background:#1a1a1b; padding:20px; border-radius:8px; text-align:center; }
-.modal button{ margin-top:10px; padding:6px 12px; }
-
-/* ===== Animations Wordle ===== */
-.tile.pop{ animation: pop 120ms ease-in-out; }
-@keyframes pop{ 0%{transform:scale(1)} 50%{transform:scale(1.12)} 100%{transform:scale(1)} }
-
-.reveal{ animation: flip 600ms ease forwards; transform-style:preserve-3d; }
-@keyframes flip{ 0%{transform:rotateX(0deg)} 45%{transform:rotateX(-90deg)} 55%{transform:rotateX(-90deg)} 100%{transform:rotateX(0deg)} }
-
-.row.shake{ animation: row-shake 450ms ease; }
-@keyframes row-shake{
-  0%{transform:translateX(0)}
-  15%{transform:translateX(-6px)}
-  30%{transform:translateX(6px)}
-  45%{transform:translateX(-4px)}
-  60%{transform:translateX(4px)}
-  75%{transform:translateX(-2px)}
-  100%{transform:translateX(0)}
-}
-
-.board.win-shake{ animation: win-shake 600ms ease; }
-@keyframes win-shake{
-  0%{transform:translateX(0)}
-  15%{transform:translateX(-6px)}
-  30%{transform:translateX(6px)}
-  45%{transform:translateX(-4px)}
-  60%{transform:translateX(4px)}
-  75%{transform:translateX(-2px)}
-  100%{transform:translateX(0)}
-}
-
-.board.win-bounce{ animation: win-bounce 800ms cubic-bezier(.34,1.56,.64,1); }
-@keyframes win-bounce{
-  0%{transform:scale(1)}
-  30%{transform:scale(1.06)}
-  55%{transform:scale(0.97)}
-  75%{transform:scale(1.03)}
-  100%{transform:scale(1)}
+.row.shake{animation:shake .4s}
+@keyframes shake{
+  0%{transform:translateX(0)}25%{transform:translateX(-5px)}50%{transform:translateX(5px)}75%{transform:translateX(-5px)}100%{transform:translateX(0)}
 }
 </style>
 </head>
 <body>
 <div class="app">
-  <header>
-    <h1>WORDLE</h1>
-    <div style="margin-top:8px;text-align:center;">
-      <label style="font-size:12px;color:#d7dadc;">Mode :</label>
-      <select id="modeSelect" style="background:#1a1a1b;color:white;border:1px solid #3a3a3c;border-radius:4px;padding:4px 6px;">
-        <option value="5">5 lettres</option>
-        <option value="6">6 lettres</option>
-      </select>
-    </div>
-    <div style="margin-top:6px;text-align:center;">
-      <label style="font-size:12px;color:#d7dadc;">Difficulté :</label>
-      <select id="difficultySelect" style="background:#1a1a1b;color:white;border:1px solid #3a3a3c;border-radius:4px;padding:4px 6px;">
-        <option value="easy">Facile</option>
-        <option value="normal" selected>Normal</option>
-        <option value="hard">Difficile</option>
-      </select>
-    </div>
-  </header>
-
-  <div style="text-align:center;margin:10px 0;">
-    <button id="startBtn" style="background:#5383ff;color:white;border:none;border-radius:6px;padding:8px 14px;font-weight:bold;cursor:pointer;">Jouer</button>
-  </div>
-
-  <div id="boardWrap" style="display:none;"></div>
-  <div id="keyboard" class="keyboard" style="display:none;"></div>
-</div>
-
-<!-- Popup -->
-<div class="modal-overlay" id="modal">
-  <div class="modal">
-    <h2 id="modalTitle"></h2>
-    <p id="modalText"></p>
-    <button onclick="closeModal()">Rejouer</button>
-  </div>
+<header>
+  <h1>WORDLE</h1>
+  <button id="startBtn">Jouer</button>
+</header>
+<div id="board"></div>
+<div id="keyboard" class="keyboard"></div>
 </div>
 
 <script>
-// ---------- Sons Wordle (intégrés directement en code, sans fichiers externes) ----------
-const AudioCtx = window.AudioContext || window.webkitAudioContext;
-let audioCtx = null; // créé au premier clic pour respecter les politiques navigateur
+/*************** DICTIONNAIRE SIMPLE (TEST) ***************/
+const WORDS = ['SALON','TABLE','PORTE','LIVRE','STYLO','MAISON','JARDIN','PLAGES','SOLEIL'];
 
-function ensureAudio(){
-  if(!audioCtx){
-    audioCtx = new AudioCtx();
-  }
-}
-
-function playTone(freq, duration=0.08, type='square', volume=0.15){
-  ensureAudio();
-  const osc = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
-  osc.type = type;
-  osc.frequency.value = freq;
-  gain.gain.value = volume;
-  osc.connect(gain);
-  gain.connect(audioCtx.destination);
-  osc.start();
-  osc.stop(audioCtx.currentTime + duration);
-}
-
-function playSound(name){
-  switch(name){
-    case 'tap':   playTone(600, 0.04, 'square'); break;
-    case 'enter': playTone(400, 0.10, 'sawtooth'); break;
-    case 'win':   playTone(800, 0.15, 'triangle'); setTimeout(()=>playTone(1000,0.2,'triangle'),150); break;
-    case 'lose':  playTone(180, 0.25, 'sawtooth'); break;
-    case 'error': playTone(120, 0.15, 'square'); break;
-  }
-}
-
-// ================================
-// Wordle FR - Version stable
-// ================================
-
-// ---------- Utilitaires de tests ----------
-function assert(cond, msg){
-  if(!cond){ console.error('TEST FAILED:', msg); }
-  else{ console.log('TEST OK:', msg); }
-}
-
-// ---------- Dictionnaires ----------
-const WORDS_5 = [
-  // Base existante
-'ABORD','ACTIF','AIMER','ALBUM','ARBRE','BALAI','BLANC','BOULE','BRUIT','CADRE','CARTE','CHAUD','CHIEN','CHOSE','COEUR','DANSE','DEBUT','DOIGT','DOUTE','ECRAN','ECOLE','ENFER','EPAIS','ETUDE','FAIRE','FLEUR','FROID','FRUIT','GARDE','GENRE','GLACE','GRAIN','GRAND','GUIDE','HABIT','HERBE','HOTEL','HUILE','IDEAL','IMAGE','INDEX','JAUNE','JOUER','LARGE','LIVRE','MAINS','MAJOR','MARIN','MATCH','MATIN','METAL','METRE','MONDE','NAVAL','NEIGE','NOEUD','OCEAN','ODEUR','OPERA','ORAGE','PAIRE','PARIS','PARLE','PASSE','PETIT','PHARE','PIANO','PLACE','PLUME','POINT','POIRE','POMME','PORTE','PRISE','PROIE','QUART','RADAR','RAIDE','REGLE','ROBOT','ROUGE','ROUTE','SALON','SCENE','SERIE','SIEGE','SIGNE','SINGE','SOLDE','SONDE','TABLE','TARDE','TEMPS','TERRE','TITRE','TRIER','TROIS','UNITE','USAGE','VENTE','VERRE','VESTE','VILLE','VOILE','VOTER','ZEBRE',
-  // +100 nouveaux mots de 5 lettres (lot A, style 2 : courant + soutenu)
-  'ABIME','ABORD','ACCES','ACIDE','AGILE','AIGLE','AIMER','AIREL','ALBUM','ALERT',
-  'AMOUR','ANGLE','ANIME','APRES','ARBRE','ARRET','ASILE','ATOUT','AVION','BAGUE',
-  'BALAI','BANAL','BANDE','BARBE','BARRE','BASSE','BATON','BELLE','BILLE','BLANC',
-  'BLASE','BOIRE','BOITE','BONTE','BORNE','BOUTE','BRAVE','BRUIT','CADRE','CALME',
-  'CAMPE','CANAL','CARRE','CARTE','CAUSE','CHAIR','CHAMP','CHANT','CHAUD','CHOIR',
-  'CHOSE','CIBLE','CLAIR','CLERC','COEUR','COMTE','CORDE','COUPE','COURT','CRANE',
-  'CRIER','DANSE','DEBUT','DELTA','DENSE','DESIR','DOIGT','DROIT','DUREE','ECLAT',
-  'ECRAN','EGALE','ELITE','ENFER','EPAIS','EQUIPE','ETUDE','FABLE','FAIRE','FLEUR',
-  'FOCAL','FONTE','FORCE','FROID','FRUIT','GARDE','GENRE','GLACE','GRAIN','GRAVE',
-  // +100 nouveaux mots de 5 lettres (lot B, style 2 : courant + soutenu)
-  'AERER','AERIE','AIGUI','AIMER','ALENE','ALINE','AMENE','AMITI','ANCRE','ANGLE',
-  'APPEL','ARIDE','ARMEE','AROME','ASSEZ','AUDIO','AULNE','AVERE','AVIDE','BAGNE',
-  'BAHUT','BAINS','BALTE','BANJO','BARGE','BATTU','BELER','BENIR','BILAN','BISON',
-  'BLAIR','BLINI','BLOCS','BLOUS','BOCAL','BODIN','BOEUF','BOMBE','BORAX','BOSSE',
-  'BOTTE','BRAME','BRIDE','BRINS','BROYE','BRUTE','BULBE','CABAS','CABRE','CABLE',
-  'CACHE','CALIN','CANOE','CARIE','CASSE','CEINT','CELLE','CERNE','CHERI','CHUTE',
-  'CIVIL','CLAIE','CLASH','CLOUS','COGNE','COLIN','CONTE','COPIE','CORPS','COUDE',
-  'COUTE','CRABE','CREME','CUIRE','DANDY','DARSE','DATER','DEBAT','DECOR','DELIT'
-];
-
-const WORDS_6 = [
-  // +100 nouveaux mots ajoutés (lot A)
-  'ABRITE','ACCUEI','ACHATS','ACOMPT','ACTUEL','ADJOINT','ADVENI','AFFINE','AGILES','AGITER',
-  'AIGLES','AILEES','AJOUTE','ALIGNE','ALIMEN','ALLIER','ALOUET','AMANTS','AMBREE','AMENDE',
-  'AMUSER','ANCRER','ANNUER','ANOMIE','ANSEES','ANTRES','APERCU','APLOMB','APPORT','APPUIS',
-  'ARCADE','ARDEUR','ARGILE','ARMURE','AROMES','ARRETS','ARTERE','ASCEND','ASSOIR','ASTUCE',
-  'AUBADE','AUBIER','AUGURE','AUMONE','AUREUS','AUSTRE','AVANCE','AVENIR','AVOIRS','AXONES',
-  'BABORD','BACLES','BAFFES','BALLES','BANANE','BARRES','BASSES','BASTID','BAVARD','BECQUE',
-  'BENOIT','BILANS','BILLES','BISOUS','BLASON','BLEUES','BLINDE','BOBINE','BOMBES','BORDES',
-  'BORNES','BOTTES','BOUCHE','BOUCLE','BOUDIN','BOUGER','BOULES','BOUTON','BRANCH','BRAVES',
-  'BRISES','BROMES','BRONZE','BRUTES','BUISSON','BULLES','BUREAU','CABANE','CABLES','CACHEE'
-,'ABIMER','ABORDS','ABSENT','ACCORD','ACTION','ADOPTE','ADRESSE','AFFAIRE','AGENCE','AGENDA','ALERTE','AMENER','AMICAL','ANCIEN','ANIMER','ANNUEL','APERCU','ARBRES','ARGENT','ARRETE','ARRIVE','ASPECT','ASSURE','ATTAQUE','AUTEUR','AUTOUR','AVANCE','AVISER','BAGAGE','BALCON','BANQUE','BATEAU','BEAUTE','BESOIN','BILLET','BLAGUE','BLASON','BLOQUE','BOUTON','BRILLE','BRIQUE','BUREAU','CABINE','CADEAU','CAMION','CANARD','CAPTER','CARBON','CARNET','CASQUE','CENTRE','CERISE','CHAINE','CHAISE','CHANGE','CHANTE','CHARGE','CHASSE','CHEMIN','CHERIR','CHOISI','CIMENT','CITRON','CLASSE','CLIENT','CLIQUE','COFFRE','COINCE','COLLER','COMBAT','COMMUN','CONFIE','CONTRE','COPIER','CORDES','CORNES','COUPER','COURIR','COUSIN','CREMES','CROIRE','CROISE','DANGER','DANSER','DECIDE','DEFEND','DELAIS','DEMAND','DENIER','DESERT','DESIRE','DETEND','DEVANT','DEVOIR','DIGNES','DINERS','DOIGTS','DOUCES','DOUTER','DRESSE','DROITS','DURCIR','ECHANGE','ECHECS','ECLAIR','ECRIRE','EDITER','EFFACE','EGLISE','ELARGI','ELEVES','EMPLOI','ENFANT','ENJEUX','ENVOYE','EQUIPE','ERRANT','ESPACE','ESSAIS','ETAGES','ETUDES','EXACTE','EXPOSE','FAIBLE','FAMINE','FAUTES','FEMMES','FERMER','FICHES','FIGURE','FILTRE','FINALE','FLEURS','FORMER','FORCES','FOURNI','FRANCS','FRUITS','GAGNER','GARANT','GARCON','GENTIL','GESTES','GLOIRE','GOUTER','GRANDS','GROUPE','GUIDER','HABITS','HERBES','HUMAINS','IMAGES','IMPACT','IMPOTS','INVITE','JARDIN','JETONS','JOINTS','JUNGLE','LACHER','LANCES','LARGES','LECONS','LENTES','LEVERS','LIBERE','LIGNES','LOGEES','LUMIER','MACHER','MAIGRE','MAISON','MANIER','MARQUE','MELANGE','MENTAL','MERITE','METTRE','MILIEU','MINUTE','MIRAGE','MODELE','MOMENT','MONDES','MONTER','MORALE','MOTEUR','MOURIR','MUSCLE','NAITRE','NATION','NATURE','NEIGES','NIVEAU','NOMBRE','NORMES','NOTION','NOUVEL','NUAGES','OBLIGE','OBTENU','OCEANS','OCCUPE','OFFERT','OFFICE','OPPOSE','ORDRES','ORGANE','OUVERT','PALIER','PANIER','PARTIE','PASSER','PENSER','PERDRE','PERILS','PERSIL','PETITS','PIECES','PILOTE','PLACER','PLAGES','POINTS','PORTER','POSTER','POULET','POURRA','PRENDS','PRINCE','PROJET','PROMET','PROPRE','PROUVE','PUNITS','QUARTS','QUETES','RACINE','RAPIDE','RAYONS','REAGIR','RECITS','REFUSE','REGLES','REJOUE','RELIEF','REMPLI','RENARD','RENDRE','RETOUR','REVEIL','RICHES','RIVAGE','ROCHES','ROULER','ROUTES','SACHET','SAISIE','SALLES','SAVOIR','SCENES','SEANCE','SECHER','SENIOR','SERVIR','SIGNAL','SIMPLE','SINGES','SOLIDE','SONNER','SORTIE','SOUDER','SOURIS','STABLE','SUITES','TABLES','TALENT','TARDER','TEMOIN','TENANT','TENUES','TERRES','TIRAGE','TISSUS','TOMBER','TRACES','TRAINS','TROUVE','TUNNEL','UNIQUE','UNITES','USAGES','USINES','VAGUES','VALEUR','VENDRE','VENTES','VERITE','VESTES','VIGNES','VILLES','VISAGE','VITALE','VIVANT','VOILES','VOISIN','VOYAGE',
-  // +100 nouveaux mots ajoutés (lot B, style 2 : courant + soutenu)
-  'AMOURS','ANCRER','ANIMER','ANNULE','APAISE','ARRETE','ASSURE','ATTIRE','AUGURE','AUTRES',
-  'BALADE','BASQUE','BESOINS','BILANS','BONHEUR','BORNES','BOUTEE','BRISEE','CACHER','CALMER',
-  'CAMERA','CAPTER','CERCLE','CHARGE','CHOEUR','CIBLES','CIMENT','CLARTE','COFFRE','COMBLE',
-  'CONFER','CONTES','CORDON','COUPLE','COURBE','COUTER','CRAYON','CREUSE','DANGER','DELAIS',
-  'DEVOIR','DISQUE','DOUTER','DUREES','ECRIRE','EDITER','EFFORT','EGALER','ELANER','EMPLOI',
-  'ENFANT','ENTREE','EQUIPE','ERIGER','ESPOIR','ETAPES','EXACTE','EXIGER','FABLES','FAVEUR',
-  'FIERTE','FILMER','FORMER','FRAISE','FUGACE','GARDER','GELULE','GENIAL','GLOIRE','HABITS',
-  'HARDIE','HARMON','HESITE','HONNEE','IDEALE','IMPACT','INSERE','INVITE','JARDIN','JASMIN',
-  'JONGLE','JOUETS','JUSTES','KERMES','LACHER','LARGES','LECTEUR','LENTEE','LIEGES','LISSES',
-  // +100 nouveaux mots ajoutés (lot C, style 2 : courant + soutenu)
-  'ABRISE','ACCENT','ACERES','ACIDES','ADIEUX','ADMIRE','ADORER','AFFLUX','AGENCE','AGREER',
-  'AIDERI','AIGUES','AILES','AIMERA','AJOUTS','ALARME','ALERTE','ALIGNE','ALLUME','AMASSE',
-  'AMICAL','AMOURS','ANALOG','ANCRER','ANIMER','ANNULE','APAISE','ARCADE','ARDEUR','ARETES',
-  'ARGENT','ARIDES','ARMURE','ARRETS','ARTERE','ASSISE','ASTUCE','AUBIER','AUGURE','AUMONE',
-  'AVANCE','AVENIR','AVOIRS','BALLES','BANQUE','BASQUE','BATONS','BESOINS','BILANS','BLEUES',
-  'BONJOUR','BORNES','BOUCHE','BOUGER','BOULES','BOUTON','BRISES','BRUTES','BUREAU','CABANE',
-  'CADRES','CALMER','CAMION','CAPTER','CARRES','CERCLE','CHARGE','CHERIR','CHOISI','CLARTE',
-  'COFFRE','COLERE','COMBLE','COMPTE','CONTES','CORDON','COUPLE','COURBE','COUTER','CREUSE',
-  'DANGER','DELAIS','DEVOIR','DISQUE','DOUTER','ECRIRE','EDITER','EFFORT','EMPLOI','ENFANT'
-];
-
-// ---------- Etat du jeu ----------
+/*************** ETAT DU JEU ***************/
 let solution = '';
-let started = false;
-let difficulty = 'normal';
-let wordLength = 5;
-let board = [];
-let row = 0, col = 0, gameOver = false;
+let currentRow = 0;
+let currentCol = 0;
+let grid = [];
+let gameOver = false;
+const WORD_LENGTH = 5;
+const MAX_ROWS = 6;
 
-const boardWrap = document.getElementById('boardWrap');
+const board = document.getElementById('board');
 const keyboard = document.getElementById('keyboard');
 
-// ---------- Démarrage du jeu ----------
+/*************** INITIALISATION ***************/
 function startGame(){
-  const mode = document.getElementById('modeSelect');
-  wordLength = parseInt(mode.value, 10);
-  const list = wordLength === 5 ? WORDS_5 : WORDS_6;
-  solution = list[Math.floor(Math.random()*list.length)];
-  board = Array.from({length:6}, ()=> Array(wordLength).fill(''));
-  row = 0; col = 0; gameOver = false;
-
-  renderBoard();
-  renderKeyboard();
-
-  boardWrap.style.display = 'block';
-  keyboard.style.display = 'block';
-  started = true;
-  selectTile(0,0);
+  solution = WORDS[Math.floor(Math.random()*WORDS.length)];
+  console.log('Mot:', solution); // pour debug
+  currentRow = 0; currentCol = 0; gameOver = false;
+  grid = Array.from({length:MAX_ROWS},()=>Array(WORD_LENGTH).fill(''));
+  drawBoard();
+  drawKeyboard();
 }
 
-// ---------- Rendu ----------
-function renderBoard(){
-  boardWrap.innerHTML = '';
-  const b = document.createElement('div'); b.className = 'board';
-  for(let r=0;r<6;r++){
-    const line = document.createElement('div'); line.className = 'row';
-    for(let c=0;c<wordLength;c++){
-      const t = document.createElement('div');
-      t.className = 'tile';
-      t.id = `tile-${r}-${c}`;
-      t.onclick = () => selectTile(r,c);
-      line.appendChild(t);
+/*************** GRILLE ***************/
+function drawBoard(){
+  board.innerHTML='';
+  board.className='board';
+  for(let r=0;r<MAX_ROWS;r++){
+    const row=document.createElement('div');
+    row.className='row';
+    for(let c=0;c<WORD_LENGTH;c++){
+      const tile=document.createElement('div');
+      tile.className='tile';
+      tile.id=`tile-${r}-${c}`;
+      row.appendChild(tile);
     }
-    b.appendChild(line);
+    board.appendChild(row);
   }
-  boardWrap.appendChild(b);
 }
 
-const KB = ['AZERTYUIOP','QSDFGHJKLM','WXCVBN'];
-function renderKeyboard(){
-  keyboard.innerHTML = '';
-  KB.forEach(r=>{
-    const rowDiv = document.createElement('div'); rowDiv.className = 'kb-row';
-    [...r].forEach(ch=>{
-      const k = document.createElement('div'); k.className = 'key'; k.textContent = ch;
-      k.onclick = () => handleKey(ch);
-      rowDiv.appendChild(k);
+/*************** CLAVIER ***************/
+const KEYS = ['AZERTYUIOP','QSDFGHJKLM','WXCVBN'];
+function drawKeyboard(){
+  keyboard.innerHTML='';
+  KEYS.forEach(line=>{
+    const row=document.createElement('div'); row.className='kb-row';
+    [...line].forEach(letter=>{
+      const key=document.createElement('div');
+      key.className='key'; key.textContent=letter;
+      key.onclick=()=>handleKey(letter);
+      row.appendChild(key);
     });
-    keyboard.appendChild(rowDiv);
+    keyboard.appendChild(row);
   });
-
-  // touches action
-  const actionRow = document.createElement('div'); actionRow.className = 'kb-row';
-  const enter = document.createElement('div'); enter.className = 'key wide'; enter.textContent = 'Entrer'; enter.onclick = onEnter;
-  const back = document.createElement('div'); back.className = 'key wide'; back.textContent = 'Suppr'; back.onclick = onBack;
-  actionRow.appendChild(enter); actionRow.appendChild(back);
-  keyboard.appendChild(actionRow);
+  const row=document.createElement('div'); row.className='kb-row';
+  const enter=document.createElement('div'); enter.className='key wide'; enter.textContent='Entrer'; enter.onclick=checkWord;
+  const back=document.createElement('div'); back.className='key wide'; back.textContent='Suppr'; back.onclick=backspace;
+  row.appendChild(enter); row.appendChild(back);
+  keyboard.appendChild(row);
 }
 
-// ---------- Gestion des entrées ----------
+/*************** SAISIE ***************/
 function handleKey(letter){
-  playSound('tap');
-  if(!started || gameOver) return;
-  if(col >= wordLength) return;
-
-  board[row][col] = letter;
-  const tile = document.getElementById(`tile-${row}-${col}`);
-  if(tile){
-    tile.textContent = letter;
-    tile.classList.remove('pop'); void tile.offsetWidth; tile.classList.add('pop');
-  }
-  col++;
-  if(col < wordLength) selectTile(row, col);
+  if(gameOver || currentCol>=WORD_LENGTH) return;
+  grid[currentRow][currentCol]=letter;
+  document.getElementById(`tile-${currentRow}-${currentCol}`).textContent=letter;
+  currentCol++;
 }
 
-function onBack(){
-  playSound('tap');
-  if(!started || gameOver) return;
-  if(col > 0) col--;
-  board[row][col] = '';
-  const tile = document.getElementById(`tile-${row}-${col}`);
-  if(tile) tile.textContent = '';
-  selectTile(row, col);
+function backspace(){
+  if(gameOver || currentCol===0) return;
+  currentCol--;
+  grid[currentRow][currentCol]='';
+  document.getElementById(`tile-${currentRow}-${currentCol}`).textContent='';
 }
 
-function onEnter(){
-  playSound('enter');
-  if(!started || gameOver) return;
-
-  const currentRow = document.querySelectorAll('.row')[row];
-  if(board[row].includes('')){
-    playSound('error');
-    currentRow.classList.remove('shake'); void currentRow.offsetWidth; currentRow.classList.add('shake');
+/*************** LOGIQUE WORDLE ***************/
+function checkWord(){
+  if(gameOver) return;
+  const guess = grid[currentRow].join('');
+  if(guess.length<WORD_LENGTH){
+    document.querySelectorAll('.row')[currentRow].classList.add('shake');
     return;
   }
 
-  const guess = board[row].join('');
+  const result = Array(WORD_LENGTH).fill('gray');
+  const solArr = solution.split('');
 
-  // Mode difficile : réutilisation obligatoire des lettres vertes et jaunes
-  if(difficulty === 'hard' && !validateHardMode(guess)){
-    playSound('error');
-    currentRow.classList.remove('shake'); void currentRow.offsetWidth; currentRow.classList.add('shake');
-    showModal('Mode difficile', 'Tu dois réutiliser toutes les lettres vertes et jaunes trouvées.');
-    return;
-  }
-
-  revealRow(guess);
-
-  if(guess === solution){
-    const boardEl = document.querySelector('.board');
-    boardEl.classList.add('win-shake');
-    setTimeout(()=>{
-      boardEl.classList.remove('win-shake');
-      boardEl.classList.add('win-bounce');
-      setTimeout(()=>boardEl.classList.remove('win-bounce'),900);
-    },650);
-    gameOver = true;
-    playSound('win');
-    showModal('Bravo !', 'Mot trouvé : ' + solution);
-    return;
-  }
-
-  row++;
-  col = 0;
-
-  if(row >= 6){
-    gameOver = true;
-    playSound('lose');
-    showModal('Perdu', 'Mot : ' + solution);
-    return;
-  }
-
-  selectTile(row, col);
-}
-
-// Révélation des couleurs Wordle
-function revealRow(guess){
-  const sol = solution.split('');
-  const colors = Array(wordLength).fill('gray');
-
-  // Vert
-  for(let i=0;i<wordLength;i++){
-    if(guess[i] === sol[i]){
-      colors[i] = 'green';
-      sol[i] = null;
+  // Verts
+  for(let i=0;i<WORD_LENGTH;i++){
+    if(guess[i]===solArr[i]){
+      result[i]='green';
+      solArr[i]=null;
     }
   }
 
-  // Jaune
-  for(let i=0;i<wordLength;i++){
-    if(colors[i] === 'gray'){
-      const idx = sol.indexOf(guess[i]);
-      if(idx !== -1){
-        colors[i] = 'yellow';
-        sol[idx] = null;
+  // Jaunes
+  for(let i=0;i<WORD_LENGTH;i++){
+    if(result[i]==='gray'){
+      const idx=solArr.indexOf(guess[i]);
+      if(idx!==-1){
+        result[i]='yellow';
+        solArr[idx]=null;
       }
     }
   }
 
-  for(let i=0;i<wordLength;i++){
-    const tile = document.getElementById(`tile-${row}-${i}`);
-    tile.classList.remove('reveal'); void tile.offsetWidth; tile.classList.add('reveal');
-    if(colors[i] === 'green') tile.style.background = 'var(--green)';
-    else if(colors[i] === 'yellow') tile.style.background = 'var(--yellow)';
-    else tile.style.background = 'var(--gray)';
+  // Appliquer couleurs
+  for(let i=0;i<WORD_LENGTH;i++){
+    const tile=document.getElementById(`tile-${currentRow}-${i}`);
+    tile.classList.add(result[i]);
+    colorKey(guess[i], result[i]);
   }
 
-  updateKeyboard(guess, colors);
-  saveHardHints(guess, colors);
-  return colors;
+  if(guess===solution){
+    gameOver=true;
+    alert('Bravo !');
+    return;
+  }
+
+  currentRow++;
+  currentCol=0;
+  if(currentRow>=MAX_ROWS){
+    gameOver=true;
+    alert('Perdu ! Mot : '+solution);
+  }
 }
 
-// Mise à jour du clavier
-function updateKeyboard(guess, colors){
-  for(let i=0;i<guess.length;i++){
-    const letter = guess[i];
-    document.querySelectorAll('.key').forEach(k=>{
-      if(k.textContent === letter){
-        if(colors[i] === 'green') k.className = 'key green';
-        else if(colors[i] === 'yellow' && !k.classList.contains('green')) k.className = 'key yellow';
-        else if(colors[i] === 'gray') k.className = 'key dark';
+function colorKey(letter,color){
+  document.querySelectorAll('.key').forEach(k=>{
+    if(k.textContent===letter){
+      if(color==='green'){
+        k.className='key green';
+      } else if(color==='yellow' && !k.classList.contains('green')){
+        k.className='key yellow';
+      } else if(color==='gray' && !k.classList.contains('green') && !k.classList.contains('yellow')){
+        k.className='key gray';
       }
-    });
-  }
+    }
+  });
 }
 
-// Contraintes du mode difficile
-let hardGreen = {};
-let hardYellow = new Set();
+/*************** CLAVIER PHYSIQUE ***************/
+window.addEventListener('keydown',e=>{
+  if(e.key>='a' && e.key<='z') handleKey(e.key.toUpperCase());
+  if(e.key==='Backspace') backspace();
+  if(e.key==='Enter') checkWord();
+});
 
-function saveHardHints(guess, colors){
-  for(let i=0;i<colors.length;i++){
-    if(colors[i] === 'green') hardGreen[i] = guess[i];
-    if(colors[i] === 'yellow') hardYellow.add(guess[i]);
-  }
-}
-
-function validateHardMode(guess){
-  // Les verts doivent rester au même endroit
-  for(const pos in hardGreen){
-    if(guess[pos] !== hardGreen[pos]) return false;
-  }
-  // Les jaunes doivent être présents quelque part
-  for(const l of hardYellow){
-    if(!guess.includes(l)) return false;
-  }
-  return true;
-}
-
-function selectTile(r,c){
-  document.querySelectorAll('.tile').forEach(t=>t.classList.remove('active'));
-  const t = document.getElementById(`tile-${r}-${c}`);
-  if(t) t.classList.add('active');
-}
-
-// ---------- Popup : Rejouer = retour au bouton Jouer ----------
-function showModal(title,text){
-  document.getElementById('modalTitle').textContent = title;
-  document.getElementById('modalText').textContent = text;
-  document.getElementById('modal').style.display = 'flex';
-}
-
-function closeModal(){
-  const modal = document.getElementById('modal');
-  modal.style.display = 'none';
-
-  boardWrap.style.display = 'none';
-  keyboard.style.display = 'none';
-
-  started = false;
-  gameOver = false;
-  solution = '';
-  board = [];
-  row = 0; col = 0;
-
-  // reset contraintes hard mode
-  hardGreen = {};
-  hardYellow = new Set();
-}
-
-// ---------- Tests automatiques ----------
-assert(typeof startGame === 'function', 'startGame est une fonction valide');
-assert(typeof handleKey === 'function', 'handleKey est maintenant défini');
-assert(typeof onBack === 'function', 'onBack est défini');
-assert(typeof playSound === 'function', 'playSound est défini');
-assert(typeof onEnter === 'function', 'onEnter est défini');
-assert(typeof revealRow === 'function', 'revealRow est défini');
-assert(typeof validateHardMode === 'function', 'validateHardMode est défini');
-assert(boardWrap.style.display === 'none', 'La grille est cachée avant de cliquer sur Jouer');
-assert(keyboard.style.display === 'none', 'Le clavier est caché avant de cliquer sur Jouer');
-
-// Tests supplémentaires de robustesse
-(function(){
-  // Test que WORDS_5 et WORDS_6 ne sont pas vides
-  assert(Array.isArray(WORDS_5) && WORDS_5.length > 0, 'WORDS_5 contient des mots');
-  assert(Array.isArray(WORDS_6) && WORDS_6.length > 0, 'WORDS_6 contient des mots');
-})();
-
-// ---------- Clavier physique (PC/Mac) ----------
-function handlePhysicalKey(e){
-  if(!started || gameOver) return;
-
-  const key = e.key;
-
-  // Empêche le scroll / comportements par défaut
-  if(['Backspace','Enter'].includes(key) || /^[a-zA-Z]$/.test(key)){
-    e.preventDefault();
-  }
-
-  // Lettres
-  if(/^[a-zA-Z]$/.test(key)){
-    handleKey(key.toUpperCase());
-    return;
-  }
-
-  // Suppression
-  if(key === 'Backspace'){
-    onBack();
-    return;
-  }
-
-  // Validation
-  if(key === 'Enter'){
-    onEnter();
-    return;
-  }
-}
-
-// On écoute le clavier physique globalement
-window.addEventListener('keydown', handlePhysicalKey);
-
-// Tests clavier physique
-assert(typeof handlePhysicalKey === 'function', 'handlePhysicalKey est défini');
-
-// ---------- Initialisation ----------
-const startBtn = document.getElementById('startBtn');
-startBtn.addEventListener('click', startGame);
-
-const difficultySelect = document.getElementById('difficultySelect');
-difficultySelect.addEventListener('change', ()=>{ difficulty = difficultySelect.value; });
+/*************** LANCEMENT ***************/
+document.getElementById('startBtn').addEventListener('click', startGame);
 </script>
 </body>
 </html>
