@@ -1,0 +1,517 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Clone Wordle (FR) — 5/6 lettres, 3 niveaux</title>
+  <style>
+    :root{
+      --bg:#121213;
+      --tile-bg:#121213;
+      --tile-border:#3a3a3c;
+      --text:#d7dadc;
+      --green:#6aaa64;   /* Wordle green */
+      --yellow:#c9b458;  /* Wordle yellow */
+      --gray:#3a3a3c;    /* Wordle gray */
+      --accent:#5383ff;
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+    html,body{height:100%;margin:0;background:var(--bg);color:var(--text);display:flex;align-items:center;justify-content:center}
+    .app{width:760px;max-width:95%;}
+    header{display:flex;align-items:center;justify-content:center;margin-bottom:20px}
+    h1{font-size:20px;margin:0}
+    .controls{display:flex;gap:8px;align-items:center}
+    select,input[type=file]{background:#0f0f10;border:1px solid #222;padding:8px;border-radius:6px;color:var(--text)}
+    button{background:var(--accent);border:none;padding:8px 12px;border-radius:6px;color:white;cursor:pointer}
+
+    .board{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      justify-content:center;
+      align-items:center;
+    }
+    .row{
+      display:flex;
+      gap:8px;
+    }
+    .tile{
+      width:62px;
+      height:62px;
+      border-radius:4px;
+      border:2px solid #3a3a3c;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-weight:700;
+      font-size:32px;
+      background:#121213;
+      color:#d7dadc;
+      text-transform:uppercase;
+      box-sizing:border-box;
+    }
+    .tile.small{width:48px;height:48px;font-size:20px}
+
+    .keyboard{margin-top:14px;display:flex;flex-direction:column;gap:8px;align-items:center}
+    .kb-row{display:flex;gap:6px}
+    .key{padding:10px 12px;border-radius:6px;background:#0f0f10;border:1px solid #222;color:var(--text);cursor:pointer;user-select:none;font-weight:600}
+    .key.wide{padding:10px 18px}
+
+    .controls small{color:#9aa0a6;display:block}
+    footer{margin-top:12px;color:#9aa0a6;font-size:13px}
+
+    /* reveal animations */
+    .reveal{animation:flip 600ms ease forwards;transform-origin:center}
+    @keyframes flip{0%{transform:rotateX(0deg)}50%{transform:rotateX(-90deg)}100%{transform:rotateX(0deg)}}
+
+    .hint{font-size:13px;color:#9aa0a6}
+  
+    /* ===== Wordle pixel-perfect adjustments ===== */
+    .keyboard{
+      margin-top:24px;
+    }
+    .kb-row{
+      gap:6px;
+    }
+    .key{
+      min-width:42px;
+      height:58px;
+      padding:0 6px;
+      border-radius:4px;
+      background:#818384;
+      border:none;
+      color:#ffffff;
+      font-weight:700;
+      font-size:14px;
+      text-transform:uppercase;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    .key.wide{
+      min-width:64px;
+      font-size:12px;
+    }
+
+    /* Tile animations closer to Wordle */
+    .tile{
+      transition: transform 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+    }
+    .tile.pop{
+      animation: pop 120ms ease-in-out;
+    }
+    @keyframes pop{
+      0%{transform:scale(1)}
+      50%{transform:scale(1.1)}
+      100%{transform:scale(1)}
+    }
+
+    .reveal{
+      animation: flip 600ms ease forwards;
+      transform-style: preserve-3d;
+    }
+    @keyframes flip{
+      0%{transform:rotateX(0deg)}
+      45%{transform:rotateX(-90deg)}
+      55%{transform:rotateX(-90deg)}
+      100%{transform:rotateX(0deg)}
+    }
+
+  
+    /* ===== Wordle Popups (Victory / Defeat) ===== */
+    .modal-overlay{
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,0.6);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      z-index:999;
+    }
+    .modal{
+      background:#1a1a1b;
+      color:#ffffff;
+      border-radius:10px;
+      width:90%;
+      max-width:320px;
+      padding:20px;
+      text-align:center;
+      box-shadow:0 10px 30px rgba(0,0,0,0.6);
+      animation: popup 250ms ease-out;
+    }
+    @keyframes popup{
+      0%{transform:scale(0.7);opacity:0}
+      100%{transform:scale(1);opacity:1}
+    }
+    .modal h2{margin:0 0 10px 0;font-size:22px}
+    .modal p{margin:0 0 15px 0;color:#d7dadc}
+    .modal button{
+      background:#5383ff;
+      border:none;
+      color:white;
+      padding:8px 14px;
+      border-radius:6px;
+      cursor:pointer;
+      font-weight:700;
+    }
+    
+    /* ===== Victory Animations (Shake + Bounce) ===== */
+    .board.win-shake{animation: win-shake 600ms ease}
+    @keyframes win-shake{
+      0%{transform:translateX(0)}
+      15%{transform:translateX(-6px)}
+      30%{transform:translateX(6px)}
+      45%{transform:translateX(-4px)}
+      60%{transform:translateX(4px)}
+      75%{transform:translateX(-2px)}
+      100%{transform:translateX(0)}
+    }
+
+    .board.win-bounce{animation: win-bounce 800ms cubic-bezier(.34,1.56,.64,1)}
+    @keyframes win-bounce{
+      0%{transform:scale(1)}
+      30%{transform:scale(1.06)}
+      55%{transform:scale(0.97)}
+      75%{transform:scale(1.03)}
+      100%{transform:scale(1)}
+    }
+
+
+
+    /* ===== Mobile Perfect Mode ===== */
+    @media (max-width: 600px){
+      html,body{
+        align-items:flex-start;
+        justify-content:flex-start;
+      }
+      .app{
+        width:100%;
+        max-width:100%;
+        padding:8px 6px env(safe-area-inset-bottom);
+        box-sizing:border-box;
+      }
+      header{
+        margin:10px 0 8px 0;
+      }
+      h1{
+        font-size:18px;
+        letter-spacing:3px;
+      }
+      .board{
+        gap:6px;
+        margin-top:6px;
+      }
+      .row{
+        gap:6px;
+      }
+      .tile{
+        width:48px;
+        height:48px;
+        font-size:22px;
+        border-width:2px;
+      }
+      .keyboard{
+        margin-top:10px;
+        gap:6px;
+      }
+      .kb-row{
+        gap:4px;
+      }
+      .key{
+        min-width:28px;
+        height:46px;
+        font-size:12px;
+        border-radius:4px;
+        padding:0 4px;
+      }
+      .key.wide{
+        min-width:44px;
+        font-size:11px;
+      }
+      .modal{
+        max-width:280px;
+        padding:16px;
+      }
+    }
+
+    /* Extra small phones */
+    @media (max-width: 380px){
+      .tile{
+        width:42px;
+        height:42px;
+        font-size:20px;
+      }
+      .key{
+        min-width:24px;
+        height:42px;
+        font-size:11px;
+      }
+      .key.wide{
+        min-width:38px;
+      }
+    }
+
+</style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1 style="letter-spacing:4px;font-weight:700">WORDLE</h1>
+      
+    </header>
+
+    <div id="boardWrap">
+      <!-- board injected here -->
+    </div>
+
+    <div class="keyboard" id="keyboard"></div>
+    <div style="height:10px"></div>
+    
+    
+  </div>
+
+<script>
+/*********************
+ * WORDLE CLONE FIXED
+ *********************/
+
+// ===== POPUP SYSTEM =====
+function showModal(type, word=''){
+  const modal = document.getElementById('modal');
+  const title = document.getElementById('modalTitle');
+  const text = document.getElementById('modalText');
+
+  if(type === 'win'){
+    title.textContent = 'Bravo !';
+    text.textContent = 'Tu as trouvé le mot : ' + word;
+  } else if(type === 'lose'){
+    title.textContent = 'Perdu !';
+    text.textContent = 'Le mot était : ' + word;
+  } else {
+    title.textContent = 'Information';
+    text.textContent = word;
+  }
+  modal.style.display = 'flex';
+}
+
+function closeModal(){
+  document.getElementById('modal').style.display = 'none';
+  startGame();
+}
+
+// ===== Victory animation controller =====
+function animateWin(){
+  const board = document.querySelector('.board');
+  if(!board) return;
+  board.classList.add('win-shake');
+  setTimeout(()=>{
+    board.classList.remove('win-shake');
+    board.classList.add('win-bounce');
+    setTimeout(()=>board.classList.remove('win-bounce'), 900);
+  }, 650);
+}
+
+// ===== Wordle-like Sound Engine =====
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+const audioCtx = new AudioCtx();
+
+function playTone(freq, duration, type='sine', volume=0.15){
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = type;
+  osc.frequency.value = freq;
+  gain.gain.value = volume;
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.start();
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+  osc.stop(audioCtx.currentTime + duration);
+}
+
+function soundTap(){ playTone(520, 0.05, 'square', 0.08); }
+function soundEnter(){ playTone(440, 0.08, 'triangle', 0.12); }
+function soundWin(){ playTone(660, 0.12, 'sine', 0.15); setTimeout(()=>playTone(880, 0.15, 'sine', 0.18), 150); }
+function soundLose(){ playTone(220, 0.2, 'sawtooth', 0.12); }
+
+window.addEventListener('click', ()=>{
+  if(audioCtx.state === 'suspended') audioCtx.resume();
+}, {once:true});
+
+// ===== Dictionnaire =====
+const DEFAULT_5 = ['AMOUR','MAISON','FRUIT','ECOLE','POINT','BLANC','NOIR','ROUGE','BLEU','ARGOT','TABLE','CHIEN','CHAT','PARIS','LUNDI'];
+
+let usedWordsAll = {5: DEFAULT_5};
+let solution = '';
+let wordLength = 5;
+let currentRow = 0;
+let currentCol = 0;
+let board = [];
+let gameOver = false;
+
+const boardWrap = document.getElementById('boardWrap');
+const keyboardDiv = document.getElementById('keyboard');
+
+// ===== Game init =====
+function startGame(){
+  solution = usedWordsAll[5][Math.floor(Math.random()*usedWordsAll[5].length)];
+  currentRow = 0;
+  currentCol = 0;
+  gameOver = false;
+  board = Array.from({length:6},()=>Array.from({length:5},()=>''));
+  renderBoard();
+  renderKeyboard();
+}
+
+function renderBoard(){
+  boardWrap.innerHTML = '';
+  const boardDiv = document.createElement('div');
+  boardDiv.className = 'board';
+  for(let r=0;r<6;r++){
+    const row = document.createElement('div');
+    row.className = 'row';
+    for(let c=0;c<5;c++){
+      const tile = document.createElement('div');
+      tile.className = 'tile';
+      tile.id = `tile-${r}-${c}`;
+      row.appendChild(tile);
+    }
+    boardDiv.appendChild(row);
+  }
+  boardWrap.appendChild(boardDiv);
+}
+
+// ===== Keyboard =====
+const KB = ['AZERTYUIOP','QSDFGHJKLM','WXCVBN'];
+
+function renderKeyboard(){
+  keyboardDiv.innerHTML='';
+  KB.forEach(row=>{
+    const div = document.createElement('div');
+    div.className = 'kb-row';
+    for(const ch of row){
+      const key = document.createElement('div');
+      key.className = 'key';
+      key.textContent = ch;
+      key.onclick = ()=>handleKey(ch);
+      div.appendChild(key);
+    }
+    keyboardDiv.appendChild(div);
+  });
+
+  const actionRow = document.createElement('div');
+  actionRow.className='kb-row';
+  const enter = document.createElement('div');
+  enter.className='key wide';
+  enter.textContent='Entrer';
+  enter.onclick = onEnter;
+  const back = document.createElement('div');
+  back.className='key wide';
+  back.textContent='Suppr';
+  back.onclick = onBack;
+  actionRow.appendChild(enter);
+  actionRow.appendChild(back);
+  keyboardDiv.appendChild(actionRow);
+}
+
+function handleKey(ch){
+  if(gameOver) return;
+  soundTap();
+  if(currentCol < 5){
+    board[currentRow][currentCol] = ch;
+    document.getElementById(`tile-${currentRow}-${currentCol}`).textContent = ch;
+    currentCol++;
+  }
+}
+
+function onBack(){
+  if(gameOver) return;
+  soundTap();
+  if(currentCol > 0){
+    currentCol--;
+    board[currentRow][currentCol] = '';
+    document.getElementById(`tile-${currentRow}-${currentCol}`).textContent = '';
+  }
+}
+
+function onEnter(){
+  if(gameOver) return;
+  soundEnter();
+  const guess = board[currentRow].join('');
+  if(guess.length < 5) return;
+
+  revealRow(guess);
+
+  if(guess === solution){
+    gameOver = true;
+    soundWin();
+    animateWin();
+    setTimeout(()=>showModal('win', solution), 1200);
+    return;
+  }
+
+  currentRow++;
+  currentCol = 0;
+
+  if(currentRow >= 6){
+    gameOver = true;
+    soundLose();
+    setTimeout(()=>showModal('lose', solution), 600);
+  }
+}
+
+function revealRow(guess){
+  const solArr = solution.split('');
+  const res = Array(5).fill('gray');
+
+  for(let i=0;i<5;i++){
+    if(guess[i] === solArr[i]){
+      res[i] = 'green';
+      solArr[i] = null;
+    }
+  }
+
+  for(let i=0;i<5;i++){
+    if(res[i] === 'gray'){
+      const idx = solArr.indexOf(guess[i]);
+      if(idx !== -1){
+        res[i] = 'yellow';
+        solArr[idx] = null;
+      }
+    }
+  }
+
+  for(let i=0;i<5;i++){
+    const tile = document.getElementById(`tile-${currentRow}-${i}`);
+    setTimeout(()=>{
+      if(res[i] === 'green') tile.style.background = 'var(--green)';
+      else if(res[i] === 'yellow') tile.style.background = 'var(--yellow)';
+      else tile.style.background = 'var(--gray)';
+      tile.style.color = '#fff';
+      tile.style.border = 'none';
+    }, i*150);
+  }
+}
+
+// ===== Physical keyboard =====
+window.addEventListener('keydown', e=>{
+  if(e.key === 'Enter') onEnter();
+  else if(e.key === 'Backspace') onBack();
+  else if(/^[a-zA-Z]$/.test(e.key)) handleKey(e.key.toUpperCase());
+});
+
+// ===== Start =====
+startGame();
+</script>
+
+
+<!-- ===== POPUP HTML ===== -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h2 id="modalTitle"></h2>
+    <p id="modalText"></p>
+    <button onclick="closeModal()">Rejouer</button>
+  </div>
+</div>
+
+</body>
+</html>
