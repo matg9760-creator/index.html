@@ -259,6 +259,14 @@
       border-color:#5383ff;
       box-shadow:0 0 0 2px rgba(83,131,255,0.4);
     }
+
+
+    /* ===== Keyboard colors like Wordle ===== */
+    .key.green{background:var(--green) !important; color:#fff}
+    .key.yellow{background:var(--yellow) !important; color:#fff}
+    .key.gray{background:#3a3a3c !important; color:#fff}
+    .key.dark{background:#1f1f1f !important; color:#777}
+
 </style>
 </head>
 <body>
@@ -424,17 +432,65 @@ function onEnter(){
 }
 
 function revealRow(guess){
-  const sol=[...solution]; const res=Array(5).fill('gray');
-  for(let i=0;i<5;i++) if(guess[i]===sol[i]){ res[i]='green'; sol[i]=null; }
-  for(let i=0;i<5;i++) if(res[i]==='gray'){
-    const idx=sol.indexOf(guess[i]); if(idx!==-1){ res[i]='yellow'; sol[idx]=null; }
+  const sol=[...solution];
+  const res=Array(5).fill('gray');
+
+  // Greens
+  for(let i=0;i<5;i++){
+    if(guess[i]===sol[i]){
+      res[i]='green';
+      sol[i]=null;
+    }
   }
+  // Yellows
+  for(let i=0;i<5;i++){
+    if(res[i]==='gray'){
+      const idx = sol.indexOf(guess[i]);
+      if(idx!==-1){
+        res[i]='yellow';
+        sol[idx]=null;
+      }
+    }
+  }
+
+  // Apply tile colors
+  for(let i=0;i<5;i++){
+    const t=document.getElementById(`tile-${currentRow}-${i}`);
+    setTimeout(()=>{
+      t.style.background = res[i]==='green'?'var(--green)':res[i]==='yellow'?'var(--yellow)':'var(--gray)';
+      t.style.color='#fff';
+      t.style.border='none';
+    },i*150);
+  }
+
+  // Update keyboard colors (dark for absent letters)
+  updateKeyboardColors(guess, res);
+}
+
   for(let i=0;i<5;i++){
     const t=document.getElementById(`tile-${currentRow}-${i}`);
     setTimeout(()=>{
       t.style.background = res[i]==='green'?'var(--green)':res[i]==='yellow'?'var(--yellow)':'var(--gray)';
       t.style.color='#fff'; t.style.border='none';
     },i*150);
+  }
+}
+
+// ===== Keyboard update =====
+function updateKeyboardColors(guess, res){
+  for(let i=0;i<5;i++){
+    const letter = guess[i];
+    const state = res[i];
+    const keys = [...document.querySelectorAll('.key')].filter(k=>k.textContent===letter);
+    keys.forEach(k=>{
+      // priority: green > yellow > dark
+      if(k.classList.contains('green')) return;
+      if(k.classList.contains('yellow') && state==='gray') return;
+      k.classList.remove('green','yellow','gray','dark');
+      if(state==='green') k.classList.add('green');
+      else if(state==='yellow') k.classList.add('yellow');
+      else if(state==='gray') k.classList.add('dark');
+    });
   }
 }
 
