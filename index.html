@@ -412,7 +412,11 @@ kbd.addEventListener('keydown', e => {
 });
 
 // Reprendre le focus clavier au clic
- document.body.addEventListener('click', ()=> kbd.focus());
+ document.body.addEventListener('click', (e)=>{
+  // Do not steal focus when interacting with the mode selector or other form controls
+  if(e.target && (e.target.id === 'modeSelect' || e.target.tagName === 'SELECT' || e.target.tagName === 'OPTION')) return;
+  kbd.focus();
+});
 
 startGame();
 });
