@@ -67,6 +67,7 @@ h1{letter-spacing:4px}
 </head>
 <body>
 <div class="app">
+<input id="kbd-capture" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" style="position:fixed;opacity:0;pointer-events:none;height:0;width:0;">
 <header><h1>WORDLE</h1></header>
 <div id="boardWrap"></div>
 <div id="keyboard" class="keyboard"></div>
@@ -83,6 +84,11 @@ h1{letter-spacing:4px}
 
 <script>
 document.addEventListener("DOMContentLoaded",()=>{
+  // Capture physical keyboard via hidden input
+  const kbd = document.getElementById('kbd-capture');
+  kbd.focus();
+  document.body.addEventListener('click',()=>kbd.focus());
+
   // Enable physical keyboard focus
   document.body.setAttribute('tabindex','0');
   document.body.focus();
@@ -225,10 +231,31 @@ function closeModal(){
   document.getElementById("modal").style.display="none";
   startGame();
 
-  // ===== Physical keyboard support (A–Z + accents) =====
-  window.addEventListener('keydown', (e) => {
+  // ===== Physical keyboard support (A–Z + accents) via hidden input =====
+  const map = {
+    'é':'E','è':'E','ê':'E','ë':'E',
+    'à':'A','â':'A','ä':'A',
+    'î':'I','ï':'I',
+    'ô':'O','ö':'O',
+    'ù':'U','û':'U','ü':'U',
+    'ç':'C'
+  };
+  const kbd = document.getElementById('kbd-capture');
+  kbd.addEventListener('keydown', (e) => {
     if(gameOver) return;
-    if(e.key === 'Enter'){ onEnter(); return; }
+    if(e.key === 'Enter'){ e.preventDefault(); onEnter(); return; }
+    if(e.key === 'Backspace'){ e.preventDefault(); onBack(); return; }
+    let key = e.key;
+    if(map[key]) key = map[key];
+    else key = key.toUpperCase();
+    if(/^[A-Z]$/.test(key)){
+      e.preventDefault();
+      handleKey(key);
+    }
+  });
+
+  // ===== Physical keyboard support (A–Z + accents) =====
+   return; }
     if(e.key === 'Backspace'){ onBack(); return; }
 
     const map = {
@@ -250,9 +277,7 @@ function closeModal(){
   });
 
 // ===== Physical keyboard support (A–Z + accents) =====
-window.addEventListener('keydown', e => {
-  if(gameOver) return;
-  if(e.key === 'Enter') return onEnter();
+
   if(e.key === 'Backspace') return onBack();
 
   const map = {
@@ -274,9 +299,7 @@ window.addEventListener('keydown', e => {
 });
 
 // ===== Physical keyboard support (A–Z + accents) =====
-window.addEventListener('keydown', e => {
-  if(gameOver) return;
-  if(e.key === 'Enter') return onEnter();
+
   if(e.key === 'Backspace') return onBack();
 
   // Normalize accented letters to base letter
