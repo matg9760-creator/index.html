@@ -455,7 +455,7 @@ kbd.addEventListener('keydown', e => {
 });
 
 // Reprendre le focus clavier au clic
- // Reprendre le focus clavier UNIQUEMENT quand on clique sur le clavier virtuel (évite l'ouverture auto du clavier mobile)
+// Reprendre le focus clavier UNIQUEMENT quand on clique sur le clavier virtuel (évite l'ouverture auto du clavier mobile)
 document.body.addEventListener('click', (e)=>{
   // Si on clique dans le clavier virtuel, on autorise le focus pour le clavier physique
   const keyboardArea = document.getElementById('keyboard');
@@ -463,9 +463,10 @@ document.body.addEventListener('click', (e)=>{
     kbd.focus();
   }
 });
-});
 
+// Démarrage du jeu
 startGame();
+
 });
 </script>
 </body>
