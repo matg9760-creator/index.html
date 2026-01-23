@@ -36,6 +36,8 @@
       gap:8px;
     }
     .tile{
+      cursor:pointer;
+      
       width:62px;
       height:62px;
       border-radius:4px;
@@ -251,6 +253,12 @@
       }
     }
 
+
+    /* ===== Tile selection ===== */
+    .tile.active{
+      border-color:#5383ff;
+      box-shadow:0 0 0 2px rgba(83,131,255,0.4);
+    }
 </style>
 </head>
 <body>
@@ -373,11 +381,17 @@ function renderBoard(){
       const tile = document.createElement('div');
       tile.className = 'tile';
       tile.id = `tile-${r}-${c}`;
+      // click to select tile
+      tile.addEventListener('click', ()=>selectTile(r,c));
+      tile.addEventListener('touchstart', (e)=>{ e.preventDefault(); selectTile(r,c); }, {passive:false});
       row.appendChild(tile);
     }
     boardDiv.appendChild(row);
   }
   boardWrap.appendChild(boardDiv);
+  // select first tile by default
+  selectTile(currentRow, currentCol);
+}
 }
 
 // ===== Keyboard =====
@@ -424,9 +438,15 @@ function renderKeyboard(){
 function handleKey(ch){
   if(gameOver) return;
   soundTap();
-  if(currentCol < 5){
+  // write in selected tile
+  if(currentCol >= 0 && currentCol < 5){
     board[currentRow][currentCol] = ch;
-    document.getElementById(`tile-${currentRow}-${currentCol}`).textContent = ch;
+    const tile = document.getElementById(`tile-${currentRow}-${currentCol}`);
+    tile.textContent = ch;
+    // move selection to next tile
+    if(currentCol < 4) selectTile(currentRow, currentCol+1);
+  }
+}-${currentCol}`).textContent = ch;
     currentCol++;
   }
 }
@@ -434,14 +454,24 @@ function handleKey(ch){
 function onBack(){
   if(gameOver) return;
   soundTap();
-  if(currentCol > 0){
-    currentCol--;
+  if(currentCol > 0 || board[currentRow][currentCol]){
+    // clear current tile
     board[currentRow][currentCol] = '';
-    document.getElementById(`tile-${currentRow}-${currentCol}`).textContent = '';
+    const tile = document.getElementById(`tile-${currentRow}-${currentCol}`);
+    tile.textContent = '';
+    // move selection left if possible
+    if(currentCol > 0) selectTile(currentRow, currentCol-1);
+  }
+}-${currentCol}`).textContent = '';
   }
 }
 
 function onEnter(){
+  if(gameOver) return;
+  soundEnter();
+  // ensure row is complete
+  const guess = board[currentRow].join('');
+  if(guess.length < 5 || board[currentRow].some(c=>c==='')) return;
   if(gameOver) return;
   soundEnter();
   const guess = board[currentRow].join('');
@@ -459,6 +489,8 @@ function onEnter(){
 
   currentRow++;
   currentCol = 0;
+  // auto select first tile of next row
+  selectTile(currentRow, currentCol);
 
   if(currentRow >= 6){
     gameOver = true;
@@ -498,6 +530,18 @@ function revealRow(guess){
       tile.style.border = 'none';
     }, i*150);
   }
+}
+
+// ===== Tile selection logic =====
+function selectTile(r,c){
+  if(gameOver) return;
+  // only allow selecting current row
+  if(r !== currentRow) return;
+  // remove previous active
+  document.querySelectorAll('.tile.active').forEach(t=>t.classList.remove('active'));
+  currentCol = c;
+  const tile = document.getElementById(`tile-${r}-${c}`);
+  if(tile) tile.classList.add('active');
 }
 
 // ===== Physical keyboard =====
