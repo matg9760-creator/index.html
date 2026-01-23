@@ -392,7 +392,9 @@ function renderKeyboard(){
       const key = document.createElement('div');
       key.className = 'key';
       key.textContent = ch;
-      key.onclick = ()=>handleKey(ch);
+      const handler = ()=>handleKey(ch);
+      key.onclick = handler;
+      key.addEventListener('touchstart', (e)=>{ e.preventDefault(); handler(); }, {passive:false});
       div.appendChild(key);
     }
     keyboardDiv.appendChild(div);
@@ -403,14 +405,21 @@ function renderKeyboard(){
   const enter = document.createElement('div');
   enter.className='key wide';
   enter.textContent='Entrer';
-  enter.onclick = onEnter;
+  const enterHandler = ()=>onEnter();
+  enter.onclick = enterHandler;
+  enter.addEventListener('touchstart', (e)=>{ e.preventDefault(); enterHandler(); }, {passive:false});
+
   const back = document.createElement('div');
   back.className='key wide';
   back.textContent='Suppr';
-  back.onclick = onBack;
+  const backHandler = ()=>onBack();
+  back.onclick = backHandler;
+  back.addEventListener('touchstart', (e)=>{ e.preventDefault(); backHandler(); }, {passive:false});
+
   actionRow.appendChild(enter);
   actionRow.appendChild(back);
   keyboardDiv.appendChild(actionRow);
+}
 }
 
 function handleKey(ch){
