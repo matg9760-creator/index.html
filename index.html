@@ -235,14 +235,6 @@ function startGame(){
 const modeSelect = document.getElementById('modeSelect');
 modeSelect.addEventListener('change', startGame);
 
-  solution = WORDS[Math.floor(Math.random()*WORDS.length)];
-  board = Array.from({length:6}, ()=> Array(5).fill(""));
-  row = 0; col = 0; gameOver = false;
-  renderBoard();
-  renderKeyboard();
-  selectTile(0,0);
-  kbd.focus();
-}
 
 function renderBoard(){
   boardWrap.innerHTML = "";
