@@ -106,7 +106,8 @@ h1{ letter-spacing:4px; margin:0; }
   100%{transform:scale(1)}
 }
 
-</style>= Animations Wordle ===== */
+
+/* ===== Animations Wordle ===== */
 .tile.pop{ animation: pop 120ms ease-in-out; }
 @keyframes pop{ 0%{transform:scale(1)} 50%{transform:scale(1.12)} 100%{transform:scale(1)} }
 
@@ -219,11 +220,7 @@ function startGame(){
 
 function renderBoard(){
   boardWrap.innerHTML = "";
-  const b = documefunction handleKey(letter){
-  soundTap();
-  const tileEl = document.getElementById(`tile-${row}-${col}`);
-  if(tileEl){ tileEl.classList.remove('pop'); void tileEl.offsetWidth; tileEl.classList.add('pop'); }
-className = "board";
+  const b = document.createElement("div"); b.className = "board";
   for(let r=0;r<6;r++){
     const line = document.createElement("div"); line.className = "row";
     for(let c=0;c<5;c++){
@@ -238,37 +235,28 @@ className = "board";
   boardWrap.appendChild(b);
 }
 
-const KB = [function onEnter(){
-  soundEnter();
-  const rowEl = document.querySelectorAll('.row')[row];
-HJKLM","WXCVBN"];
-function renderKeyboard(if(board[row].includes("")){
-    if(rowEl){ rowEl.classList.remove('shake'); void rowEl.offsetWidth; rowEl.classList.add('shake'); }
-    return;
-  }forEach(r=>{
-    cif(board[row].join("") === solution){
-    const boardEl = document.querySelector('.board');
-    if(boardEl){
-      boardEl.classList.add('win-shake');
-      setTimeout(()=>{
-        boardEl.classList.remove('win-shake');
-        boardEl.classList.add('win-bounce');
-        setTimeout(()=>boardEl.classList.remove('win-bounce'),900);
-      },650);
-    }
-    soundWin();"div"); rowDiv.className = "kb-row";
+const KB = ["AZERTYUIOP","QSDFGHJKLM","WXCVBN"];
+function renderKeyboard(){
+  keyboard.innerHTML = "";
+  KB.forEach(r=>{
+    const rowDiv = document.createElement("div"); rowDiv.className = "kb-row";
     [...r].forEach(ch=>{
       const k = document.createElement("div"); k.className = "key"; k.textContent = ch;
       k.onclick = () => handleKey(ch);
       rowDiv.appendChild(k);
     });
-    keyboard.appendChild(rowDivfunction revealRow(){
-  const rowEl = document.querySelectorAll('.row')[row];= document.createElement("div"); act.className = "kb-row";
+    keyboard.appendChild(rowDiv);
+  });
+  const act = document.createElement("div"); act.className = "kb-row";
   const enter = document.createElement("div"); enter.className = "key wide"; enter.textContent = "Entrer"; enter.onclick = onEnter;
   const back = document.createElement("div"); back.className = "key wide"; back.textContent = "Suppr"; back.onclick = onBack;
-  act.appendChild(enter); act.appendChild(bacfor(let i=0;i<5;i++){
-    const t = document.getElementById(`tile-${row}-${i}`);
-    t.classList.remove('reveal'); void t.offsetWidth; t.classList.add('reveal');const tileEl = document.getElementById(`tile-${row}-${col}`);
+  act.appendChild(enter); act.appendChild(back);
+  keyboard.appendChild(act);
+}
+
+function handleKey(letter){
+  soundTap();
+  const tileEl = document.getElementById(`tile-${row}-${col}`);
   if(tileEl){ tileEl.classList.remove('pop'); void tileEl.offsetWidth; tileEl.classList.add('pop'); }
 
   soundTap();
@@ -296,13 +284,11 @@ function onEnter(){
   soundEnter();
   if(gameOver) return;
   if(board[row].includes("")){
-    // shake current row if incomplete
     if(rowEl){ rowEl.classList.remove('shake'); void rowEl.offsetWidth; rowEl.classList.add('shake'); }
     return;
   }
   revealRow();
   if(board[row].join("") === solution){
-    // Win animations
     const boardEl = document.querySelector('.board');
     if(boardEl){
       boardEl.classList.add('win-shake');
@@ -344,8 +330,7 @@ function revealRow(){
 
   for(let i=0;i<5;i++){
     const t = document.getElementById(`tile-${row}-${i}`);
-    // flip animation
-    t.classList.remove('reveal'); void t.offsetWidth
+    t.classList.remove('reveal'); void t.offsetWidth; t.classList.add('reveal');
     if(res[i] === "green") t.style.background = "var(--green)";
     else if(res[i] === "yellow") t.style.background = "var(--yellow)";
     else t.style.background = "var(--gray)";
@@ -373,7 +358,8 @@ function selectTile(r,c){
 }
 
 // Popup
-function showModal(title,texlementById("modalTitle").textContent = title;
+function showModal(title,text){
+  document.getElementById("modalTitle").textContent = title;
   document.getElementById("modalText").textContent = text;
   document.getElementById("modal").style.display = "flex";
 }
