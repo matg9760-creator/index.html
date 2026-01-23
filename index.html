@@ -149,7 +149,16 @@ h1{ letter-spacing:4px; margin:0; }
 </head>
 <body>
 <div class="app">
-  <header><h1>WORDLE</h1></header>
+  <header>
+  <h1>WORDLE</h1>
+  <div style="margin-top:8px;text-align:center;">
+    <label style="font-size:12px;color:#d7dadc;">Mode :</label>
+    <select id="modeSelect" style="background:#1a1a1b;color:white;border:1px solid #3a3a3c;border-radius:4px;padding:4px 6px;">
+      <option value="5">5 lettres</option>
+      <option value="6">6 lettres</option>
+    </select>
+  </div>
+</header>
   <div id="boardWrap"></div>
   <div id="keyboard" class="keyboard"></div>
 </div>
@@ -199,8 +208,10 @@ window.addEventListener('click', ()=>{
 
 
 
-const WORDS = ["AMOUR","MAISON","FRUIT","ECOLE","POINT","BLANC","ROUGE","BLEU","NOIR","TABLE"];
+const WORDS_5 = ["AMOUR","MAISON","FRUIT","ECOLE","POINT","BLANC","ROUGE","BLEU","NOIR","TABLE"];
+const WORDS_6 = ["BANANE","ORANGE","VOITUR","CHALET","BOUTON","JARDIN","CAMION","SAVOIR","POULET","COUPEE"];
 let solution = "";
+let wordLength = 5;
 let board = [];
 let row = 0, col = 0, gameOver = false;
 
@@ -209,6 +220,21 @@ const keyboard = document.getElementById("keyboard");
 const kbd = document.getElementById("kbd-capture");
 
 function startGame(){
+  const mode = document.getElementById('modeSelect');
+  wordLength = parseInt(mode.value);
+  const list = wordLength === 5 ? WORDS_5 : WORDS_6;
+  solution = list[Math.floor(Math.random()*list.length)];
+  board = Array.from({length:6}, ()=> Array(wordLength).fill(""));
+  row = 0; col = 0; gameOver = false;
+  renderBoard();
+  renderKeyboard();
+  selectTile(0,0);
+  kbd.focus();
+}
+
+const modeSelect = document.getElementById('modeSelect');
+modeSelect.addEventListener('change', startGame);
+
   solution = WORDS[Math.floor(Math.random()*WORDS.length)];
   board = Array.from({length:6}, ()=> Array(5).fill(""));
   row = 0; col = 0; gameOver = false;
@@ -223,7 +249,7 @@ function renderBoard(){
   const b = document.createElement("div"); b.className = "board";
   for(let r=0;r<6;r++){
     const line = document.createElement("div"); line.className = "row";
-    for(let c=0;c<5;c++){
+    for(let c=0;c<wordLength;c++){
       const t = document.createElement("div");
       t.className = "tile";
       t.id = `tile-${r}-${c}`;
@@ -261,10 +287,10 @@ function handleKey(letter){
 
   soundTap();
   if(gameOver) return;
-  if(col < 5){
+  if(col < wordLength){
     board[row][col] = letter;
     document.getElementById(`tile-${row}-${col}`).textContent = letter;
-    if(col < 4) selectTile(row, col+1);
+    if(col < wordLength-1) selectTile(row, col+1);
   }
 }
 
@@ -316,19 +342,19 @@ function revealRow(){
   const rowEl = document.querySelectorAll('.row')[row];
   const guess = board[row].join("");
   const sol = [...solution];
-  const res = Array(5).fill("gray");
+  const res = Array(wordLength).fill("gray");
 
-  for(let i=0;i<5;i++){
+  for(let i=0;i<wordLength;i++){
     if(guess[i] === sol[i]){ res[i] = "green"; sol[i] = null; }
   }
-  for(let i=0;i<5;i++){
+  for(let i=0;i<wordLength;i++){
     if(res[i] === "gray"){
       const idx = sol.indexOf(guess[i]);
       if(idx !== -1){ res[i] = "yellow"; sol[idx] = null; }
     }
   }
 
-  for(let i=0;i<5;i++){
+  for(let i=0;i<wordLength;i++){
     const t = document.getElementById(`tile-${row}-${i}`);
     t.classList.remove('reveal'); void t.offsetWidth; t.classList.add('reveal');
     if(res[i] === "green") t.style.background = "var(--green)";
@@ -339,7 +365,7 @@ function revealRow(){
 }
 
 function updateKeyboard(guess, res){
-  for(let i=0;i<5;i++){
+  for(let i=0;i<wordLength;i++){
     const letter = guess[i];
     const keys = [...document.querySelectorAll('.key')].filter(k=>k.textContent === letter);
     keys.forEach(k=>{
