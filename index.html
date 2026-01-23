@@ -374,7 +374,21 @@ const WORDS_5 = [
   "TOILE","TOMBE","TORSE","TOURS","TRAME","TRIER","TROUE","TURBO","UNION","USUEL",
   "VACHE","VAGUE","VALET","VALSE","VEINE","VENIR","VERBE","VERNI","VIBRE","VIDER",
   "VIGNE","VILES","VIRER","VISSE","VIVAT","VOICI","VOLER","VOTES","ZONES"
-];
+\];
+
+// ===== Nettoyage automatique des dictionnaires (suppression des doublons, accents, longueurs invalides) =====
+function cleanWords(list, length){
+  return [...new Set(
+    list
+      .map(w => w.normalize('NFD').replace(/[\u0300-\u036f]/g, ''))
+      .map(w => w.toUpperCase().trim())
+      .filter(w => w.length === length)
+  )];
+}
+
+// Versions propres utilisées par le jeu
+let WORDS_5_CLEAN = cleanWords(WORDS_5, 5);
+
 const WORDS_6 = [
   "ABIMER","ABORDS","ABRIER","ABSENT","ACCORD","ACHATS","ACTION","ADIEUX","ADOPTE","ADRESSE","AFFAIRE","AFFUTE","AGENCE","AGENDA","AGITER","AGREER","AIGLES","AILEES","AJOUTE","ALERTE",
   "ALIGNE","ALLIEE","ALOURS","ALPINE","AMENER","AMICAL","AMOURS","ANALYS","ANCIEN","ANGEES","ANIMER","ANNUEL","ANNULE","APERCU","APPELS","APPUIS","ARBRES","ARCHEE","ARGENT","ARMEES",
@@ -400,7 +414,14 @@ const WORDS_6 = [
   "SOCIET","SOIGNE","SOLIDE","SONNER","SORTIE","SOUDER","SOUPER","SOURIS","STABLE","SUITES","SURGER","TABLES","TALENT","TARIFS","TARDER","TEINTS","TEMOIN","TENANT","TENUES","TERRES",
   "TETESI","TIRAGE","TISSUS","TOMBER","TRACES","TRAINS","TRAVAI","TROUVE","TUNNEL","TYPAGE","UNIQUE","UNITES","USAGES","USINES","UTILIS","VAGUES","VALEUR","VANTES","VENDRE","VENTES",
   "VERITE","VESTES","VICTOI","VIEILL","VIGNES","VILLES","VISAGE","VITALE","VIVANT","VOILES","VOISIN","VOYAGE","WAGONS","YOGOUR","ZONESZ"
-];
+\];
+
+// Finalisation du nettoyage pour les mots de 6 lettres
+let WORDS_6_CLEAN = cleanWords(WORDS_6, 6);
+
+let solution =ion du nettoyage pour les mots de 6 lettres
+let WORDS_6_CLEAN = cleanWords(WORDS_6, 6);
+
 let solution = "";
 let difficulty = 'normal';
 let wordLength = 5;
@@ -411,8 +432,7 @@ const boardWrap = document.getElementById("boardWrap");
 const keyboard = document.getElementById("keyboard");
 const kbd = document.getElementById("kbd-capture");
 
-function startGame(){
-  const mode = document.getElementById('modeSelect');
+function staconst list = wordLength === 5 ? WORDS_5_CLEAN : WORDS_6_CLEAN;modeSelect');
   wordLength = parseInt(mode.value);
   const list = wordLength === 5 ? WORDS_5 : WORDS_6;
   solution = list[Math.floor(Math.random()*list.length)];
