@@ -380,7 +380,7 @@ const WORDS_5 = [
 function cleanWords(list, length){
   return [...new Set(
     list
-      .map(w => w.normalize('NFD').replace(/[\\u0300-\\u036f]/g, ''))
+      .map(w => w.normalize('NFD').replace(/[\u0300-\u036f]/g, ''))
       .map(w => w.toUpperCase().trim())
       .filter(w => w.length === length)
   )];
@@ -388,6 +388,11 @@ function cleanWords(list, length){
 
 // Versions propres utilisées par le jeu
 let WORDS_5_CLEAN = cleanWords(WORDS_5, 5);
+// Sécurité : si pour une raison quelconque la liste propre est vide, on retombe sur la liste brute
+if(!WORDS_5_CLEAN || WORDS_5_CLEAN.length === 0){
+  console.warn('WORDS_5_CLEAN vide, utilisation de WORDS_5 brut');
+  WORDS_5_CLEAN = WORDS_5;
+}
 
 const WORDS_6 = [
   "ABIMER","ABORDS","ABRIER","ABSENT","ACCORD","ACHATS","ACTION","ADIEUX","ADOPTE","ADRESSE","AFFAIRE","AFFUTE","AGENCE","AGENDA","AGITER","AGREER","AIGLES","AILEES","AJOUTE","ALERTE",
@@ -418,6 +423,11 @@ const WORDS_6 = [
 
 // Finalisation du nettoyage pour les mots de 6 lettres
 let WORDS_6_CLEAN = cleanWords(WORDS_6, 6);
+// Sécurité : si pour une raison quelconque la liste propre est vide, on retombe sur la liste brute
+if(!WORDS_6_CLEAN || WORDS_6_CLEAN.length === 0){
+  console.warn('WORDS_6_CLEAN vide, utilisation de WORDS_6 brut');
+  WORDS_6_CLEAN = WORDS_6;
+}
 
 let solution = "";
 let difficulty = 'normal';
@@ -626,7 +636,13 @@ function showModal(title,text){
 }
 window.closeModal = function(){
   document.getElementById("modal").style.display = "none";
+  console.log('WORDS_5_CLEAN:', WORDS_5_CLEAN.length, 'mots');
+console.log('WORDS_6_CLEAN:', WORDS_6_CLEAN.length, 'mots');
+try{
   startGame();
+}catch(e){
+  console.error('Erreur au démarrage du jeu:', e);
+}
 }
 
 // ===== Clavier physique (PC) sans ouvrir le clavier mobile =====
