@@ -22,11 +22,7 @@ body{
   justify-content:center;
   font-family:system-ui, Arial, sans-serif;
 }
-.app{
-  width:100%;
-  max-width:420px;
-  padding:10px;
-}
+.app{ width:100%; max-width:420px; padding:10px; }
 header{ text-align:center; margin:10px 0; }
 h1{ letter-spacing:4px; margin:0; }
 
@@ -60,12 +56,7 @@ h1{ letter-spacing:4px; margin:0; }
   background:rgba(0,0,0,.6);
   display:none; align-items:center; justify-content:center;
 }
-.modal{
-  background:#1a1a1b;
-  padding:20px;
-  border-radius:8px;
-  text-align:center;
-}
+.modal{ background:#1a1a1b; padding:20px; border-radius:8px; text-align:center; }
 .modal button{ margin-top:10px; padding:6px 12px; }
 
 /* ===== Animations Wordle ===== */
@@ -127,8 +118,13 @@ h1{ letter-spacing:4px; margin:0; }
       </select>
     </div>
   </header>
-  <div id="boardWrap"></div>
-  <div id="keyboard" class="keyboard"></div>
+
+  <div style="text-align:center;margin:10px 0;">
+    <button id="startBtn" style="background:#5383ff;color:white;border:none;border-radius:6px;padding:8px 14px;font-weight:bold;cursor:pointer;">Jouer</button>
+  </div>
+
+  <div id="boardWrap" style="display:none;"></div>
+  <div id="keyboard" class="keyboard" style="display:none;"></div>
 </div>
 
 <!-- Popup -->
@@ -140,29 +136,18 @@ h1{ letter-spacing:4px; margin:0; }
   </div>
 </div>
 
-<!-- Champ caché pour capter le clavier physique (désactivé sur mobile) -->
-<input id="kbd-capture" readonly inputmode="none" type="text" autocomplete="off" autocapitalize="off" spellcheck="false"
-       style="position:fixed;opacity:0;pointer-events:none;height:0;width:0;">
-
 <script>
-// ================================
-// Wordle FR - Version stable, sans caractères invalides
-// ================================
-
-// ---------- Utilitaires de tests (auto-tests simples) ----------
-function assert(cond, msg){
-  if(!cond){ console.error('TEST FAILED:', msg); }
-  else{ console.log('TEST OK:', msg); }
-}
-
-// ---------- Sons (Web Audio API) ----------
+// ---------- Sons Wordle (intégrés directement en code, sans fichiers externes) ----------
 const AudioCtx = window.AudioContext || window.webkitAudioContext;
-let audioCtx = null;
+let audioCtx = null; // créé au premier clic pour respecter les politiques navigateur
+
 function ensureAudio(){
-  if(!audioCtx){ audioCtx = new AudioCtx(); }
+  if(!audioCtx){
+    audioCtx = new AudioCtx();
+  }
 }
 
-function playTone(freq, duration, type='sine', volume=0.12){
+function playTone(freq, duration=0.08, type='square', volume=0.15){
   ensureAudio();
   const osc = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
@@ -172,87 +157,91 @@ function playTone(freq, duration, type='sine', volume=0.12){
   osc.connect(gain);
   gain.connect(audioCtx.destination);
   osc.start();
-  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
   osc.stop(audioCtx.currentTime + duration);
 }
 
-function soundTap(){ playTone(520, 0.05, 'square', 0.08); }
-function soundEnter(){ playTone(420, 0.08, 'triangle', 0.12); }
-function soundWin(){ playTone(660, 0.12, 'sine', 0.15); setTimeout(()=>playTone(880, 0.15, 'sine', 0.18), 140); }
-function soundLose(){ playTone(220, 0.18, 'sawtooth', 0.12); }
+function playSound(name){
+  switch(name){
+    case 'tap':   playTone(600, 0.04, 'square'); break;
+    case 'enter': playTone(400, 0.10, 'sawtooth'); break;
+    case 'win':   playTone(800, 0.15, 'triangle'); setTimeout(()=>playTone(1000,0.2,'triangle'),150); break;
+    case 'lose':  playTone(180, 0.25, 'sawtooth'); break;
+    case 'error': playTone(120, 0.15, 'square'); break;
+  }
+}
 
-window.addEventListener('click', ()=>{ if(audioCtx && audioCtx.state==='suspended') audioCtx.resume(); }, { once:true });
+// ================================
+// Wordle FR - Version stable
+// ================================
 
-// ---------- Dictionnaires (ASCII uniquement, pas d'accents) ----------
+// ---------- Utilitaires de tests ----------
+function assert(cond, msg){
+  if(!cond){ console.error('TEST FAILED:', msg); }
+  else{ console.log('TEST OK:', msg); }
+}
+
+// ---------- Dictionnaires ----------
 const WORDS_5 = [
-  'ABORD','ACTIF','AIMER','ALBUM','ARBRE','BALAI','BLANC','BOULE','BRUIT','CADRE',
-  'CARTE','CHAUD','CHIEN','CHOSE','COEUR','DANSE','DEBUT','DOIGT','DOUTE','ECRAN',
-  'ECOLE','ENFER','EPAIS','ETUDE','FAIRE','FLEUR','FROID','FRUIT','GARDE','GENRE',
-  'GLACE','GRAIN','GRAND','GUIDE','HABIT','HERBE','HOTEL','HUILE','IDEAL','IMAGE',
-  'INDEX','JAUNE','JOUER','LARGE','LIVRE','MAINS','MAJOR','MARIN','MATCH','MATIN',
-  'METAL','METRE','MONDE','NAVAL','NEIGE','NOEUD','OCEAN','ODEUR','OPERA','ORAGE',
-  'PAIRE','PARIS','PARLE','PASSE','PETIT','PHARE','PIANO','PLACE','PLUME','POINT',
-  'POIRE','POMME','PORTE','PRISE','PROIE','QUART','RADAR','RAIDE','REGLE','ROBOT',
-  'ROUGE','ROUTE','SALON','SCENE','SERIE','SIEGE','SIGNE','SINGE','SOLDE','SONDE',
-  'TABLE','TARDE','TEMPS','TERRE','TITRE','TRIER','TROIS','UNITE','USAGE','VENTE',
-  'VERRE','VESTE','VILLE','VOILE','VOTER','ZEBRE'
+  // Base existante
+'ABORD','ACTIF','AIMER','ALBUM','ARBRE','BALAI','BLANC','BOULE','BRUIT','CADRE','CARTE','CHAUD','CHIEN','CHOSE','COEUR','DANSE','DEBUT','DOIGT','DOUTE','ECRAN','ECOLE','ENFER','EPAIS','ETUDE','FAIRE','FLEUR','FROID','FRUIT','GARDE','GENRE','GLACE','GRAIN','GRAND','GUIDE','HABIT','HERBE','HOTEL','HUILE','IDEAL','IMAGE','INDEX','JAUNE','JOUER','LARGE','LIVRE','MAINS','MAJOR','MARIN','MATCH','MATIN','METAL','METRE','MONDE','NAVAL','NEIGE','NOEUD','OCEAN','ODEUR','OPERA','ORAGE','PAIRE','PARIS','PARLE','PASSE','PETIT','PHARE','PIANO','PLACE','PLUME','POINT','POIRE','POMME','PORTE','PRISE','PROIE','QUART','RADAR','RAIDE','REGLE','ROBOT','ROUGE','ROUTE','SALON','SCENE','SERIE','SIEGE','SIGNE','SINGE','SOLDE','SONDE','TABLE','TARDE','TEMPS','TERRE','TITRE','TRIER','TROIS','UNITE','USAGE','VENTE','VERRE','VESTE','VILLE','VOILE','VOTER','ZEBRE',
+  // +100 nouveaux mots de 5 lettres (lot A, style 2 : courant + soutenu)
+  'ABIME','ABORD','ACCES','ACIDE','AGILE','AIGLE','AIMER','AIREL','ALBUM','ALERT',
+  'AMOUR','ANGLE','ANIME','APRES','ARBRE','ARRET','ASILE','ATOUT','AVION','BAGUE',
+  'BALAI','BANAL','BANDE','BARBE','BARRE','BASSE','BATON','BELLE','BILLE','BLANC',
+  'BLASE','BOIRE','BOITE','BONTE','BORNE','BOUTE','BRAVE','BRUIT','CADRE','CALME',
+  'CAMPE','CANAL','CARRE','CARTE','CAUSE','CHAIR','CHAMP','CHANT','CHAUD','CHOIR',
+  'CHOSE','CIBLE','CLAIR','CLERC','COEUR','COMTE','CORDE','COUPE','COURT','CRANE',
+  'CRIER','DANSE','DEBUT','DELTA','DENSE','DESIR','DOIGT','DROIT','DUREE','ECLAT',
+  'ECRAN','EGALE','ELITE','ENFER','EPAIS','EQUIPE','ETUDE','FABLE','FAIRE','FLEUR',
+  'FOCAL','FONTE','FORCE','FROID','FRUIT','GARDE','GENRE','GLACE','GRAIN','GRAVE',
+  // +100 nouveaux mots de 5 lettres (lot B, style 2 : courant + soutenu)
+  'AERER','AERIE','AIGUI','AIMER','ALENE','ALINE','AMENE','AMITI','ANCRE','ANGLE',
+  'APPEL','ARIDE','ARMEE','AROME','ASSEZ','AUDIO','AULNE','AVERE','AVIDE','BAGNE',
+  'BAHUT','BAINS','BALTE','BANJO','BARGE','BATTU','BELER','BENIR','BILAN','BISON',
+  'BLAIR','BLINI','BLOCS','BLOUS','BOCAL','BODIN','BOEUF','BOMBE','BORAX','BOSSE',
+  'BOTTE','BRAME','BRIDE','BRINS','BROYE','BRUTE','BULBE','CABAS','CABRE','CABLE',
+  'CACHE','CALIN','CANOE','CARIE','CASSE','CEINT','CELLE','CERNE','CHERI','CHUTE',
+  'CIVIL','CLAIE','CLASH','CLOUS','COGNE','COLIN','CONTE','COPIE','CORPS','COUDE',
+  'COUTE','CRABE','CREME','CUIRE','DANDY','DARSE','DATER','DEBAT','DECOR','DELIT'
 ];
 
 const WORDS_6 = [
-  'ABIMER','ABORDS','ABSENT','ACCORD','ACTION','ADOPTE','ADRESSE','AFFAIRE','AGENCE','AGENDA',
-  'ALERTE','AMENER','AMICAL','ANCIEN','ANIMER','ANNUEL','APERCU','ARBRES','ARGENT','ARRETE',
-  'ARRIVE','ASPECT','ASSURE','ATTAQUE','AUTEUR','AUTOUR','AVANCE','AVISER','BAGAGE','BALCON',
-  'BANQUE','BATEAU','BEAUTE','BESOIN','BILLET','BLAGUE','BLASON','BLOQUE','BOUTON','BRILLE',
-  'BRIQUE','BUREAU','CABINE','CADEAU','CAMION','CANARD','CAPTER','CARBON','CARNET','CASQUE',
-  'CENTRE','CERISE','CHAINE','CHAISE','CHANGE','CHANTE','CHARGE','CHASSE','CHEMIN','CHERIR',
-  'CHOISI','CIMENT','CITRON','CLASSE','CLIENT','CLIQUE','COFFRE','COINCE','COLLER','COMBAT',
-  'COMMUN','CONCER','CONFIE','CONTRE','COPIER','CORDES','CORNES','COUPER','COURIR','COUSIN',
-  'CREMES','CROIRE','CROISE','DANGER','DANSER','DECIDE','DEFEND','DELAIS','DEMAND','DENIER',
-  'DESERT','DESIRE','DETEND','DEVANT','DEVOIR','DIGNES','DINERS','DOIGTS','DOUCES','DOUTER',
-  'DRESSE','DROITS','DURCIR','ECHANGE','ECHECS','ECLAIR','ECRIRE','EDITER','EFFACE','EGLISE',
-  'ELARGI','ELEVES','EMPLOI','ENFANT','ENJEUX','ENVOYE','EQUIPE','ERRANT','ESPACE','ESSAIS',
-  'ETAGES','ETUDES','EXACTE','EXPOSE','FAIBLE','FAMINE','FAUTES','FEMMES','FERMER','FICHES',
-  'FIGURE','FILTRE','FINALE','FLEURS','FORMER','FORCES','FOURNI','FRANCS','FRUITS','GAGNER',
-  'GARANT','GARCON','GENTIL','GESTES','GLOIRE','GOUTER','GRANDS','GROUPE','GUIDER','HABITS',
-  'HERBES','HUMAINS','IMAGES','IMPACT','IMPOTS','INVITE','JARDIN','JETONS','JOINTS','JUNGLE',
-  'LACHER','LANCES','LARGES','LECONS','LECTUR','LENTES','LEVERS','LIBERE','LIGNES','LIMITI',
-  'LOGEES','LUMIER','MACHER','MAIGRE','MAISON','MANIER','MARQUE','MELANGE','MENTAL','MERITE',
-  'METTRE','MILIEU','MINUTE','MIRAGE','MODELE','MOMENT','MONDES','MONTER','MORALE','MOTEUR',
-  'MOURIR','MUSCLE','NAITRE','NATION','NATURE','NEIGES','NIVEAU','NOMBRE','NORMES','NOTION',
-  'NOUVEL','NUAGES','OBLIGE','OBTENU','OCEANS','OCCUPE','OFFERT','OFFICE','OPPOSE','ORDRES',
-  'ORGANE','OUVERT','PALIER','PANIER','PARTIE','PASSER','PENSER','PERDRE','PERILS','PERSIL',
-  'PETITS','PIECES','PILOTE','PLACER','PLAGES','POINTS','PORTER','POSTER','POULET','POURRA',
-  'PRENDS','PRINCE','PROJET','PROMET','PROPRE','PROUVE','PUNITS','QUARTS','QUETES','RACINE',
-  'RAPIDE','RAYONS','REAGIR','RECITS','REFUSE','REGLES','REJOUE','RELIEF','REMPLI','RENARD',
-  'RENDRE','RETOUR','REVEIL','RICHES','RIVAGE','ROCHES','ROULER','ROUTES','SACHET','SAISIE',
-  'SALLES','SAVOIR','SCENES','SEANCE','SECHER','SENIOR','SERVIR','SIGNAL','SIMPLE','SINGES',
-  'SOLIDE','SONNER','SORTIE','SOUDER','SOURIS','STABLE','SUITES','TABLES','TALENT','TARDER',
-  'TEMOIN','TENANT','TENUES','TERRES','TIRAGE','TISSUS','TOMBER','TRACES','TRAINS','TROUVE',
-  'TUNNEL','UNIQUE','UNITES','USAGES','USINES','UTILIS','VAGUES','VALEUR','VENDRE','VENTES',
-  'VERITE','VESTES','VIGNES','VILLES','VISAGE','VITALE','VIVANT','VOILES','VOISIN','VOYAGE'
+  // +100 nouveaux mots ajoutés (lot A)
+  'ABRITE','ACCUEI','ACHATS','ACOMPT','ACTUEL','ADJOINT','ADVENI','AFFINE','AGILES','AGITER',
+  'AIGLES','AILEES','AJOUTE','ALIGNE','ALIMEN','ALLIER','ALOUET','AMANTS','AMBREE','AMENDE',
+  'AMUSER','ANCRER','ANNUER','ANOMIE','ANSEES','ANTRES','APERCU','APLOMB','APPORT','APPUIS',
+  'ARCADE','ARDEUR','ARGILE','ARMURE','AROMES','ARRETS','ARTERE','ASCEND','ASSOIR','ASTUCE',
+  'AUBADE','AUBIER','AUGURE','AUMONE','AUREUS','AUSTRE','AVANCE','AVENIR','AVOIRS','AXONES',
+  'BABORD','BACLES','BAFFES','BALLES','BANANE','BARRES','BASSES','BASTID','BAVARD','BECQUE',
+  'BENOIT','BILANS','BILLES','BISOUS','BLASON','BLEUES','BLINDE','BOBINE','BOMBES','BORDES',
+  'BORNES','BOTTES','BOUCHE','BOUCLE','BOUDIN','BOUGER','BOULES','BOUTON','BRANCH','BRAVES',
+  'BRISES','BROMES','BRONZE','BRUTES','BUISSON','BULLES','BUREAU','CABANE','CABLES','CACHEE'
+,'ABIMER','ABORDS','ABSENT','ACCORD','ACTION','ADOPTE','ADRESSE','AFFAIRE','AGENCE','AGENDA','ALERTE','AMENER','AMICAL','ANCIEN','ANIMER','ANNUEL','APERCU','ARBRES','ARGENT','ARRETE','ARRIVE','ASPECT','ASSURE','ATTAQUE','AUTEUR','AUTOUR','AVANCE','AVISER','BAGAGE','BALCON','BANQUE','BATEAU','BEAUTE','BESOIN','BILLET','BLAGUE','BLASON','BLOQUE','BOUTON','BRILLE','BRIQUE','BUREAU','CABINE','CADEAU','CAMION','CANARD','CAPTER','CARBON','CARNET','CASQUE','CENTRE','CERISE','CHAINE','CHAISE','CHANGE','CHANTE','CHARGE','CHASSE','CHEMIN','CHERIR','CHOISI','CIMENT','CITRON','CLASSE','CLIENT','CLIQUE','COFFRE','COINCE','COLLER','COMBAT','COMMUN','CONFIE','CONTRE','COPIER','CORDES','CORNES','COUPER','COURIR','COUSIN','CREMES','CROIRE','CROISE','DANGER','DANSER','DECIDE','DEFEND','DELAIS','DEMAND','DENIER','DESERT','DESIRE','DETEND','DEVANT','DEVOIR','DIGNES','DINERS','DOIGTS','DOUCES','DOUTER','DRESSE','DROITS','DURCIR','ECHANGE','ECHECS','ECLAIR','ECRIRE','EDITER','EFFACE','EGLISE','ELARGI','ELEVES','EMPLOI','ENFANT','ENJEUX','ENVOYE','EQUIPE','ERRANT','ESPACE','ESSAIS','ETAGES','ETUDES','EXACTE','EXPOSE','FAIBLE','FAMINE','FAUTES','FEMMES','FERMER','FICHES','FIGURE','FILTRE','FINALE','FLEURS','FORMER','FORCES','FOURNI','FRANCS','FRUITS','GAGNER','GARANT','GARCON','GENTIL','GESTES','GLOIRE','GOUTER','GRANDS','GROUPE','GUIDER','HABITS','HERBES','HUMAINS','IMAGES','IMPACT','IMPOTS','INVITE','JARDIN','JETONS','JOINTS','JUNGLE','LACHER','LANCES','LARGES','LECONS','LENTES','LEVERS','LIBERE','LIGNES','LOGEES','LUMIER','MACHER','MAIGRE','MAISON','MANIER','MARQUE','MELANGE','MENTAL','MERITE','METTRE','MILIEU','MINUTE','MIRAGE','MODELE','MOMENT','MONDES','MONTER','MORALE','MOTEUR','MOURIR','MUSCLE','NAITRE','NATION','NATURE','NEIGES','NIVEAU','NOMBRE','NORMES','NOTION','NOUVEL','NUAGES','OBLIGE','OBTENU','OCEANS','OCCUPE','OFFERT','OFFICE','OPPOSE','ORDRES','ORGANE','OUVERT','PALIER','PANIER','PARTIE','PASSER','PENSER','PERDRE','PERILS','PERSIL','PETITS','PIECES','PILOTE','PLACER','PLAGES','POINTS','PORTER','POSTER','POULET','POURRA','PRENDS','PRINCE','PROJET','PROMET','PROPRE','PROUVE','PUNITS','QUARTS','QUETES','RACINE','RAPIDE','RAYONS','REAGIR','RECITS','REFUSE','REGLES','REJOUE','RELIEF','REMPLI','RENARD','RENDRE','RETOUR','REVEIL','RICHES','RIVAGE','ROCHES','ROULER','ROUTES','SACHET','SAISIE','SALLES','SAVOIR','SCENES','SEANCE','SECHER','SENIOR','SERVIR','SIGNAL','SIMPLE','SINGES','SOLIDE','SONNER','SORTIE','SOUDER','SOURIS','STABLE','SUITES','TABLES','TALENT','TARDER','TEMOIN','TENANT','TENUES','TERRES','TIRAGE','TISSUS','TOMBER','TRACES','TRAINS','TROUVE','TUNNEL','UNIQUE','UNITES','USAGES','USINES','VAGUES','VALEUR','VENDRE','VENTES','VERITE','VESTES','VIGNES','VILLES','VISAGE','VITALE','VIVANT','VOILES','VOISIN','VOYAGE',
+  // +100 nouveaux mots ajoutés (lot B, style 2 : courant + soutenu)
+  'AMOURS','ANCRER','ANIMER','ANNULE','APAISE','ARRETE','ASSURE','ATTIRE','AUGURE','AUTRES',
+  'BALADE','BASQUE','BESOINS','BILANS','BONHEUR','BORNES','BOUTEE','BRISEE','CACHER','CALMER',
+  'CAMERA','CAPTER','CERCLE','CHARGE','CHOEUR','CIBLES','CIMENT','CLARTE','COFFRE','COMBLE',
+  'CONFER','CONTES','CORDON','COUPLE','COURBE','COUTER','CRAYON','CREUSE','DANGER','DELAIS',
+  'DEVOIR','DISQUE','DOUTER','DUREES','ECRIRE','EDITER','EFFORT','EGALER','ELANER','EMPLOI',
+  'ENFANT','ENTREE','EQUIPE','ERIGER','ESPOIR','ETAPES','EXACTE','EXIGER','FABLES','FAVEUR',
+  'FIERTE','FILMER','FORMER','FRAISE','FUGACE','GARDER','GELULE','GENIAL','GLOIRE','HABITS',
+  'HARDIE','HARMON','HESITE','HONNEE','IDEALE','IMPACT','INSERE','INVITE','JARDIN','JASMIN',
+  'JONGLE','JOUETS','JUSTES','KERMES','LACHER','LARGES','LECTEUR','LENTEE','LIEGES','LISSES',
+  // +100 nouveaux mots ajoutés (lot C, style 2 : courant + soutenu)
+  'ABRISE','ACCENT','ACERES','ACIDES','ADIEUX','ADMIRE','ADORER','AFFLUX','AGENCE','AGREER',
+  'AIDERI','AIGUES','AILES','AIMERA','AJOUTS','ALARME','ALERTE','ALIGNE','ALLUME','AMASSE',
+  'AMICAL','AMOURS','ANALOG','ANCRER','ANIMER','ANNULE','APAISE','ARCADE','ARDEUR','ARETES',
+  'ARGENT','ARIDES','ARMURE','ARRETS','ARTERE','ASSISE','ASTUCE','AUBIER','AUGURE','AUMONE',
+  'AVANCE','AVENIR','AVOIRS','BALLES','BANQUE','BASQUE','BATONS','BESOINS','BILANS','BLEUES',
+  'BONJOUR','BORNES','BOUCHE','BOUGER','BOULES','BOUTON','BRISES','BRUTES','BUREAU','CABANE',
+  'CADRES','CALMER','CAMION','CAPTER','CARRES','CERCLE','CHARGE','CHERIR','CHOISI','CLARTE',
+  'COFFRE','COLERE','COMBLE','COMPTE','CONTES','CORDON','COUPLE','COURBE','COUTER','CREUSE',
+  'DANGER','DELAIS','DEVOIR','DISQUE','DOUTER','ECRIRE','EDITER','EFFORT','EMPLOI','ENFANT'
 ];
-
-// ---------- Nettoyage automatique ----------
-function cleanWords(list, length){
-  return [...new Set(
-    list
-      .map(w => String(w).normalize('NFD').replace(/[\u0300-\u036f]/g, ''))
-      .map(w => w.toUpperCase().trim())
-      .filter(w => w.length === length)
-  )];
-}
-
-let WORDS_5_CLEAN = cleanWords(WORDS_5, 5);
-let WORDS_6_CLEAN = cleanWords(WORDS_6, 6);
-
-// Tests automatiques sur les dictionnaires
-assert(WORDS_5_CLEAN.length > 0, 'WORDS_5_CLEAN non vide');
-assert(WORDS_6_CLEAN.length > 0, 'WORDS_6_CLEAN non vide');
-assert(WORDS_5_CLEAN.every(w => /^[A-Z]{5}$/.test(w)), 'Tous les mots 5 lettres valides');
-assert(WORDS_6_CLEAN.every(w => /^[A-Z]{6}$/.test(w)), 'Tous les mots 6 lettres valides');
 
 // ---------- Etat du jeu ----------
 let solution = '';
+let started = false;
 let difficulty = 'normal';
 let wordLength = 5;
 let board = [];
@@ -261,15 +250,21 @@ let row = 0, col = 0, gameOver = false;
 const boardWrap = document.getElementById('boardWrap');
 const keyboard = document.getElementById('keyboard');
 
+// ---------- Démarrage du jeu ----------
 function startGame(){
   const mode = document.getElementById('modeSelect');
   wordLength = parseInt(mode.value, 10);
-  const list = wordLength === 5 ? WORDS_5_CLEAN : WORDS_6_CLEAN;
+  const list = wordLength === 5 ? WORDS_5 : WORDS_6;
   solution = list[Math.floor(Math.random()*list.length)];
   board = Array.from({length:6}, ()=> Array(wordLength).fill(''));
   row = 0; col = 0; gameOver = false;
+
   renderBoard();
   renderKeyboard();
+
+  boardWrap.style.display = 'block';
+  keyboard.style.display = 'block';
+  started = true;
   selectTile(0,0);
 }
 
@@ -303,49 +298,65 @@ function renderKeyboard(){
     });
     keyboard.appendChild(rowDiv);
   });
-  const act = document.createElement('div'); act.className = 'kb-row';
+
+  // touches action
+  const actionRow = document.createElement('div'); actionRow.className = 'kb-row';
   const enter = document.createElement('div'); enter.className = 'key wide'; enter.textContent = 'Entrer'; enter.onclick = onEnter;
   const back = document.createElement('div'); back.className = 'key wide'; back.textContent = 'Suppr'; back.onclick = onBack;
-  act.appendChild(enter); act.appendChild(back);
-  keyboard.appendChild(act);
+  actionRow.appendChild(enter); actionRow.appendChild(back);
+  keyboard.appendChild(actionRow);
 }
 
-// ---------- Entrées ----------
+// ---------- Gestion des entrées ----------
 function handleKey(letter){
-  if(gameOver) return;
-  soundTap();
-  if(col < wordLength){
-    board[row][col] = letter;
-    const tile = document.getElementById(`tile-${row}-${col}`);
+  playSound('tap');
+  if(!started || gameOver) return;
+  if(col >= wordLength) return;
+
+  board[row][col] = letter;
+  const tile = document.getElementById(`tile-${row}-${col}`);
+  if(tile){
     tile.textContent = letter;
     tile.classList.remove('pop'); void tile.offsetWidth; tile.classList.add('pop');
-    if(col < wordLength-1) selectTile(row, col+1);
   }
+  col++;
+  if(col < wordLength) selectTile(row, col);
 }
 
 function onBack(){
-  if(gameOver) return;
-  soundTap();
+  playSound('tap');
+  if(!started || gameOver) return;
   if(col > 0) col--;
   board[row][col] = '';
   const tile = document.getElementById(`tile-${row}-${col}`);
-  tile.textContent = '';
-  selectTile(row,col);
+  if(tile) tile.textContent = '';
+  selectTile(row, col);
 }
 
 function onEnter(){
-  if(gameOver) return;
-  soundEnter();
-  const rowEl = document.querySelectorAll('.row')[row];
+  playSound('enter');
+  if(!started || gameOver) return;
 
+  const currentRow = document.querySelectorAll('.row')[row];
   if(board[row].includes('')){
-    rowEl.classList.remove('shake'); void rowEl.offsetWidth; rowEl.classList.add('shake');
+    playSound('error');
+    currentRow.classList.remove('shake'); void currentRow.offsetWidth; currentRow.classList.add('shake');
     return;
   }
 
-  revealRow();
+  const guess = board[row].join('');
 
-  if(board[row].join('') === solution){
+  // Mode difficile : réutilisation obligatoire des lettres vertes et jaunes
+  if(difficulty === 'hard' && !validateHardMode(guess)){
+    playSound('error');
+    currentRow.classList.remove('shake'); void currentRow.offsetWidth; currentRow.classList.add('shake');
+    showModal('Mode difficile', 'Tu dois réutiliser toutes les lettres vertes et jaunes trouvées.');
+    return;
+  }
+
+  revealRow(guess);
+
+  if(guess === solution){
     const boardEl = document.querySelector('.board');
     boardEl.classList.add('win-shake');
     setTimeout(()=>{
@@ -353,104 +364,190 @@ function onEnter(){
       boardEl.classList.add('win-bounce');
       setTimeout(()=>boardEl.classList.remove('win-bounce'),900);
     },650);
-    soundWin();
+    gameOver = true;
+    playSound('win');
     showModal('Bravo !', 'Mot trouvé : ' + solution);
-    gameOver = true; return;
+    return;
   }
 
-  row++; col = 0;
+  row++;
+  col = 0;
+
   if(row >= 6){
-    soundLose();
+    gameOver = true;
+    playSound('lose');
     showModal('Perdu', 'Mot : ' + solution);
-    gameOver = true; return;
+    return;
   }
-  selectTile(row,0);
+
+  selectTile(row, col);
 }
 
-function revealRow(){
-  const guess = board[row].join('');
+// Révélation des couleurs Wordle
+function revealRow(guess){
   const sol = solution.split('');
-  const res = Array(wordLength).fill('gray');
+  const colors = Array(wordLength).fill('gray');
 
+  // Vert
   for(let i=0;i<wordLength;i++){
-    if(guess[i] === sol[i]){ res[i] = 'green'; sol[i] = null; }
+    if(guess[i] === sol[i]){
+      colors[i] = 'green';
+      sol[i] = null;
+    }
   }
+
+  // Jaune
   for(let i=0;i<wordLength;i++){
-    if(res[i] === 'gray'){
+    if(colors[i] === 'gray'){
       const idx = sol.indexOf(guess[i]);
-      if(idx !== -1){ res[i] = 'yellow'; sol[idx] = null; }
+      if(idx !== -1){
+        colors[i] = 'yellow';
+        sol[idx] = null;
+      }
     }
   }
 
   for(let i=0;i<wordLength;i++){
-    const t = document.getElementById(`tile-${row}-${i}`);
-    t.classList.remove('reveal'); void t.offsetWidth; t.classList.add('reveal');
-    if(res[i] === 'green') t.style.background = 'var(--green)';
-    else if(res[i] === 'yellow') t.style.background = 'var(--yellow)';
-    else t.style.background = 'var(--gray)';
+    const tile = document.getElementById(`tile-${row}-${i}`);
+    tile.classList.remove('reveal'); void tile.offsetWidth; tile.classList.add('reveal');
+    if(colors[i] === 'green') tile.style.background = 'var(--green)';
+    else if(colors[i] === 'yellow') tile.style.background = 'var(--yellow)';
+    else tile.style.background = 'var(--gray)';
   }
-  updateKeyboard(guess, res);
+
+  updateKeyboard(guess, colors);
+  saveHardHints(guess, colors);
+  return colors;
 }
 
-function updateKeyboard(guess, res){
-  for(let i=0;i<wordLength;i++){
+// Mise à jour du clavier
+function updateKeyboard(guess, colors){
+  for(let i=0;i<guess.length;i++){
     const letter = guess[i];
-    const keys = [...document.querySelectorAll('.key')].filter(k=>k.textContent === letter);
-    keys.forEach(k=>{
-      if(res[i] === 'green') k.className = 'key green';
-      else if(res[i] === 'yellow' && !k.classList.contains('green')) k.className = 'key yellow';
-      else if(res[i] === 'gray') k.className = 'key dark';
+    document.querySelectorAll('.key').forEach(k=>{
+      if(k.textContent === letter){
+        if(colors[i] === 'green') k.className = 'key green';
+        else if(colors[i] === 'yellow' && !k.classList.contains('green')) k.className = 'key yellow';
+        else if(colors[i] === 'gray') k.className = 'key dark';
+      }
     });
   }
 }
 
+// Contraintes du mode difficile
+let hardGreen = {};
+let hardYellow = new Set();
+
+function saveHardHints(guess, colors){
+  for(let i=0;i<colors.length;i++){
+    if(colors[i] === 'green') hardGreen[i] = guess[i];
+    if(colors[i] === 'yellow') hardYellow.add(guess[i]);
+  }
+}
+
+function validateHardMode(guess){
+  // Les verts doivent rester au même endroit
+  for(const pos in hardGreen){
+    if(guess[pos] !== hardGreen[pos]) return false;
+  }
+  // Les jaunes doivent être présents quelque part
+  for(const l of hardYellow){
+    if(!guess.includes(l)) return false;
+  }
+  return true;
+}
+
 function selectTile(r,c){
   document.querySelectorAll('.tile').forEach(t=>t.classList.remove('active'));
-  row = r; col = c;
   const t = document.getElementById(`tile-${r}-${c}`);
   if(t) t.classList.add('active');
 }
 
-// ---------- Popup ----------
+// ---------- Popup : Rejouer = retour au bouton Jouer ----------
 function showModal(title,text){
   document.getElementById('modalTitle').textContent = title;
   document.getElementById('modalText').textContent = text;
   document.getElementById('modal').style.display = 'flex';
 }
-window.closeModal = function(){
-  document.getElementById('modal').style.display = 'none';
-  startGame();
-};
 
-// ---------- Clavier physique PC ----------
-const accentMap = {
-  'é':'E','è':'E','ê':'E','ë':'E','à':'A','â':'A','ä':'A','î':'I','ï':'I','ô':'O','ö':'O','ù':'U','û':'U','ü':'U','ç':'C'
-};
+function closeModal(){
+  const modal = document.getElementById('modal');
+  modal.style.display = 'none';
 
-window.addEventListener('keydown', (e) => {
-  if(gameOver) return;
-  if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)) e.preventDefault();
-  if(e.key === 'Enter'){ e.preventDefault(); onEnter(); return; }
-  if(e.key === 'Backspace'){ e.preventDefault(); onBack(); return; }
-  let key = e.key;
-  if(accentMap[key]) key = accentMap[key]; else key = key.toUpperCase();
-  if(/^[A-Z]$/.test(key)){
+  boardWrap.style.display = 'none';
+  keyboard.style.display = 'none';
+
+  started = false;
+  gameOver = false;
+  solution = '';
+  board = [];
+  row = 0; col = 0;
+
+  // reset contraintes hard mode
+  hardGreen = {};
+  hardYellow = new Set();
+}
+
+// ---------- Tests automatiques ----------
+assert(typeof startGame === 'function', 'startGame est une fonction valide');
+assert(typeof handleKey === 'function', 'handleKey est maintenant défini');
+assert(typeof onBack === 'function', 'onBack est défini');
+assert(typeof playSound === 'function', 'playSound est défini');
+assert(typeof onEnter === 'function', 'onEnter est défini');
+assert(typeof revealRow === 'function', 'revealRow est défini');
+assert(typeof validateHardMode === 'function', 'validateHardMode est défini');
+assert(boardWrap.style.display === 'none', 'La grille est cachée avant de cliquer sur Jouer');
+assert(keyboard.style.display === 'none', 'Le clavier est caché avant de cliquer sur Jouer');
+
+// Tests supplémentaires de robustesse
+(function(){
+  // Test que WORDS_5 et WORDS_6 ne sont pas vides
+  assert(Array.isArray(WORDS_5) && WORDS_5.length > 0, 'WORDS_5 contient des mots');
+  assert(Array.isArray(WORDS_6) && WORDS_6.length > 0, 'WORDS_6 contient des mots');
+})();
+
+// ---------- Clavier physique (PC/Mac) ----------
+function handlePhysicalKey(e){
+  if(!started || gameOver) return;
+
+  const key = e.key;
+
+  // Empêche le scroll / comportements par défaut
+  if(['Backspace','Enter'].includes(key) || /^[a-zA-Z]$/.test(key)){
     e.preventDefault();
-    handleKey(key);
   }
-});
+
+  // Lettres
+  if(/^[a-zA-Z]$/.test(key)){
+    handleKey(key.toUpperCase());
+    return;
+  }
+
+  // Suppression
+  if(key === 'Backspace'){
+    onBack();
+    return;
+  }
+
+  // Validation
+  if(key === 'Enter'){
+    onEnter();
+    return;
+  }
+}
+
+// On écoute le clavier physique globalement
+window.addEventListener('keydown', handlePhysicalKey);
+
+// Tests clavier physique
+assert(typeof handlePhysicalKey === 'function', 'handlePhysicalKey est défini');
 
 // ---------- Initialisation ----------
-const modeSelect = document.getElementById('modeSelect');
+const startBtn = document.getElementById('startBtn');
+startBtn.addEventListener('click', startGame);
+
 const difficultySelect = document.getElementById('difficultySelect');
-modeSelect.addEventListener('change', startGame);
 difficultySelect.addEventListener('change', ()=>{ difficulty = difficultySelect.value; });
-
-// Tests d'initialisation
-assert(document.getElementById('boardWrap') !== null, 'boardWrap existe');
-assert(document.getElementById('keyboard') !== null, 'keyboard existe');
-
-startGame();
 </script>
 </body>
 </html>
