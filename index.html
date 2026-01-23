@@ -428,7 +428,10 @@ window.closeModal = function(){
   startGame();
 }
 
-// Clavier physique via input caché
+// ===== Clavier physique (PC) sans ouvrir le clavier mobile =====
+// On utilise directement window.keydown pour PC.
+// Sur mobile, Safari ignore naturellement cet événement sans afficher le clavier.
+
 const accentMap = {
   'é':'E','è':'E','ê':'E','ë':'E',
   'à':'A','â':'A','ä':'A',
@@ -438,8 +441,14 @@ const accentMap = {
   'ç':'C'
 };
 
-kbd.addEventListener('keydown', e => {
+window.addEventListener('keydown', (e) => {
   if(gameOver) return;
+
+  // Empêcher le scroll avec espace ou flèches
+  if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)){
+    e.preventDefault();
+  }
+
   if(e.key === 'Enter'){ e.preventDefault(); onEnter(); return; }
   if(e.key === 'Backspace'){ e.preventDefault(); onBack(); return; }
 
