@@ -380,7 +380,7 @@ const WORDS_5 = [
 function cleanWords(list, length){
   return [...new Set(
     list
-      .map(w => w.normalize('NFD').replace(/[\u0300-\u036f]/g, ''))
+      .map(w => w.normalize('NFD').replace(/[\\u0300-\\u036f]/g, ''))
       .map(w => w.toUpperCase().trim())
       .filter(w => w.length === length)
   )];
@@ -419,9 +419,6 @@ const WORDS_6 = [
 // Finalisation du nettoyage pour les mots de 6 lettres
 let WORDS_6_CLEAN = cleanWords(WORDS_6, 6);
 
-let solution =ion du nettoyage pour les mots de 6 lettres
-let WORDS_6_CLEAN = cleanWords(WORDS_6, 6);
-
 let solution = "";
 let difficulty = 'normal';
 let wordLength = 5;
@@ -432,9 +429,10 @@ const boardWrap = document.getElementById("boardWrap");
 const keyboard = document.getElementById("keyboard");
 const kbd = document.getElementById("kbd-capture");
 
-function staconst list = wordLength === 5 ? WORDS_5_CLEAN : WORDS_6_CLEAN;modeSelect');
+function startGame(){
+  const mode = document.getElementById('modeSelect');
   wordLength = parseInt(mode.value);
-  const list = wordLength === 5 ? WORDS_5 : WORDS_6;
+  const list = wordLength === 5 ? WORDS_5_CLEAN : WORDS_6_CLEAN;
   solution = list[Math.floor(Math.random()*list.length)];
   board = Array.from({length:6}, ()=> Array(wordLength).fill(""));
   row = 0; col = 0; gameOver = false;
