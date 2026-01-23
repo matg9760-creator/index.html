@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Wordle FR - Stable</title>
+<title>Wordle FR – Version Stable</title>
 <style>
 :root{
   --bg:#121213;
@@ -20,57 +20,60 @@ body{
   color:var(--text);
   display:flex;
   justify-content:center;
+  font-family:system-ui, Arial, sans-serif;
 }
 .app{
-  max-width:420px;
   width:100%;
+  max-width:420px;
   padding:10px;
 }
-header{
-  text-align:center;
-  margin:10px 0;
-}
-h1{letter-spacing:4px}
-.board{
-  display:flex;
-  flex-direction:column;
-  gap:6px;
-  align-items:center;
-}
-.row{display:flex;gap:6px}
+header{ text-align:center; margin:10px 0; }
+h1{ letter-spacing:4px; margin:0; }
+
+.board{ display:flex; flex-direction:column; gap:6px; align-items:center; }
+.row{ display:flex; gap:6px; }
 .tile{
-  width:58px;height:58px;
+  width:56px; height:56px;
   border:2px solid var(--border);
   background:var(--tile);
-  display:flex;align-items:center;justify-content:center;
-  font-size:28px;font-weight:bold;
+  display:flex; align-items:center; justify-content:center;
+  font-size:28px; font-weight:bold;
 }
-.tile.active{border-color:#5383ff}
-.keyboard{margin-top:20px}
-.kb-row{display:flex;justify-content:center;gap:5px;margin-bottom:6px}
-.key{
-  background:#818384;color:white;
-  padding:12px;border-radius:4px;
-  font-weight:bold;min-width:28px;text-align:center;
-  cursor:pointer;user-select:none;
-}
-.key.wide{min-width:50px}
-.key.green{background:var(--green)}
-.key.yellow{background:var(--yellow)}
-.key.dark{background:#1f1f1f;color:#777}
+.tile.active{ border-color:#5383ff; }
 
-/* popup */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center}
-.modal{background:#1a1a1b;padding:20px;border-radius:8px;text-align:center}
-.modal button{margin-top:10px;padding:6px 12px}
+.keyboard{ margin-top:18px; }
+.kb-row{ display:flex; justify-content:center; gap:5px; margin-bottom:6px; }
+.key{
+  background:#818384; color:white;
+  padding:10px; border-radius:4px;
+  font-weight:bold; min-width:28px; text-align:center;
+  cursor:pointer; user-select:none;
+}
+.key.wide{ min-width:50px; }
+.key.green{ background:var(--green); }
+.key.yellow{ background:var(--yellow); }
+.key.dark{ background:#1f1f1f; color:#777; }
+
+/* Popup */
+.modal-overlay{
+  position:fixed; inset:0;
+  background:rgba(0,0,0,.6);
+  display:none; align-items:center; justify-content:center;
+}
+.modal{
+  background:#1a1a1b;
+  padding:20px;
+  border-radius:8px;
+  text-align:center;
+}
+.modal button{ margin-top:10px; padding:6px 12px; }
 </style>
 </head>
 <body>
 <div class="app">
-<input id="kbd-capture" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" style="position:fixed;opacity:0;pointer-events:none;height:0;width:0;">
-<header><h1>WORDLE</h1></header>
-<div id="boardWrap"></div>
-<div id="keyboard" class="keyboard"></div>
+  <header><h1>WORDLE</h1></header>
+  <div id="boardWrap"></div>
+  <div id="keyboard" class="keyboard"></div>
 </div>
 
 <!-- Popup -->
@@ -82,42 +85,42 @@ h1{letter-spacing:4px}
   </div>
 </div>
 
+<!-- Champ caché pour capter le clavier physique -->
+<input id="kbd-capture" type="text" autocomplete="off" autocapitalize="off" spellcheck="false"
+       style="position:fixed;opacity:0;pointer-events:none;height:0;width:0;">
+
 <script>
-document.addEventListener("DOMContentLoaded",()=>{
-  // Capture physical keyboard via hidden input
-  const kbd = document.getElementById('kbd-capture');
-  kbd.focus();
-  document.body.addEventListener('click',()=>kbd.focus());
-
-  // Enable physical keyboard focus
-  document.body.setAttribute('tabindex','0');
-  document.body.focus();
-
+document.addEventListener("DOMContentLoaded", () => {
 
 const WORDS = ["AMOUR","MAISON","FRUIT","ECOLE","POINT","BLANC","ROUGE","BLEU","NOIR","TABLE"];
-let solution="";
-let board=[];
-let row=0,col=0,gameOver=false;
+let solution = "";
+let board = [];
+let row = 0, col = 0, gameOver = false;
 
-const boardWrap=document.getElementById("boardWrap");
-const keyboard=document.getElementById("keyboard");
+const boardWrap = document.getElementById("boardWrap");
+const keyboard = document.getElementById("keyboard");
+const kbd = document.getElementById("kbd-capture");
 
 function startGame(){
   solution = WORDS[Math.floor(Math.random()*WORDS.length)];
-  board = Array.from({length:6},()=>Array(5).fill(""));
-  row=0; col=0; gameOver=false;
-  renderBoard(); renderKeyboard(); selectTile(0,0);
+  board = Array.from({length:6}, ()=> Array(5).fill(""));
+  row = 0; col = 0; gameOver = false;
+  renderBoard();
+  renderKeyboard();
+  selectTile(0,0);
+  kbd.focus();
 }
 
 function renderBoard(){
-  boardWrap.innerHTML="";
-  const b=document.createElement("div"); b.className="board";
+  boardWrap.innerHTML = "";
+  const b = document.createElement("div"); b.className = "board";
   for(let r=0;r<6;r++){
-    const line=document.createElement("div"); line.className="row";
+    const line = document.createElement("div"); line.className = "row";
     for(let c=0;c<5;c++){
-      const t=document.createElement("div"); t.className="tile";
-      t.id=`tile-${r}-${c}`;
-      t.onclick=()=>selectTile(r,c);
+      const t = document.createElement("div");
+      t.className = "tile";
+      t.id = `tile-${r}-${c}`;
+      t.onclick = () => selectTile(r,c);
       line.appendChild(t);
     }
     b.appendChild(line);
@@ -125,41 +128,39 @@ function renderBoard(){
   boardWrap.appendChild(b);
 }
 
-const KB=["AZERTYUIOP","QSDFGHJKLM","WXCVBN"];
+const KB = ["AZERTYUIOP","QSDFGHJKLM","WXCVBN"];
 function renderKeyboard(){
-  keyboard.innerHTML="";
+  keyboard.innerHTML = "";
   KB.forEach(r=>{
-    const rowDiv=document.createElement("div"); rowDiv.className="kb-row";
+    const rowDiv = document.createElement("div"); rowDiv.className = "kb-row";
     [...r].forEach(ch=>{
-      const k=document.createElement("div"); k.className="key"; k.textContent=ch;
-      k.onclick=()=>handleKey(ch);
+      const k = document.createElement("div"); k.className = "key"; k.textContent = ch;
+      k.onclick = () => handleKey(ch);
       rowDiv.appendChild(k);
     });
     keyboard.appendChild(rowDiv);
   });
-  const act=document.createElement("div"); act.className="kb-row";
-  const enter=document.createElement("div"); enter.className="key wide"; enter.textContent="Entrer";
-  enter.onclick=onEnter;
-  const back=document.createElement("div"); back.className="key wide"; back.textContent="Suppr";
-  back.onclick=onBack;
+  const act = document.createElement("div"); act.className = "kb-row";
+  const enter = document.createElement("div"); enter.className = "key wide"; enter.textContent = "Entrer"; enter.onclick = onEnter;
+  const back = document.createElement("div"); back.className = "key wide"; back.textContent = "Suppr"; back.onclick = onBack;
   act.appendChild(enter); act.appendChild(back);
   keyboard.appendChild(act);
 }
 
-function handleKey(ch){
+function handleKey(letter){
   if(gameOver) return;
-  if(col<5){
-    board[row][col]=ch;
-    document.getElementById(`tile-${row}-${col}`).textContent=ch;
-    if(col<4) selectTile(row,col+1);
+  if(col < 5){
+    board[row][col] = letter;
+    document.getElementById(`tile-${row}-${col}`).textContent = letter;
+    if(col < 4) selectTile(row, col+1);
   }
 }
 
 function onBack(){
   if(gameOver) return;
-  if(col>0){ col--; }
-  board[row][col]="";
-  document.getElementById(`tile-${row}-${col}`).textContent="";
+  if(col > 0) col--;
+  board[row][col] = "";
+  document.getElementById(`tile-${row}-${col}`).textContent = "";
   selectTile(row,col);
 }
 
@@ -167,160 +168,99 @@ function onEnter(){
   if(gameOver) return;
   if(board[row].includes("")) return;
   revealRow();
-  if(board[row].join("")===solution){
-    showModal("Bravo !","Mot trouvé : "+solution);
-    gameOver=true; return;
+  if(board[row].join("") === solution){
+    showModal("Bravo !", "Mot trouvé : " + solution);
+    gameOver = true; return;
   }
-  row++; col=0;
-  if(row>=6){
-    showModal("Perdu","Mot : "+solution);
-    gameOver=true; return;
+  row++; col = 0;
+  if(row >= 6){
+    showModal("Perdu", "Mot : " + solution);
+    gameOver = true; return;
   }
   selectTile(row,0);
 }
 
 function revealRow(){
-  const guess=board[row].join("");
-  const sol=[...solution];
-  const res=Array(5).fill("gray");
+  const guess = board[row].join("");
+  const sol = [...solution];
+  const res = Array(5).fill("gray");
 
   for(let i=0;i<5;i++){
-    if(guess[i]===sol[i]){ res[i]="green"; sol[i]=null; }
+    if(guess[i] === sol[i]){ res[i] = "green"; sol[i] = null; }
   }
   for(let i=0;i<5;i++){
-    if(res[i]==="gray"){
-      const idx=sol.indexOf(guess[i]);
-      if(idx!==-1){ res[i]="yellow"; sol[idx]=null; }
+    if(res[i] === "gray"){
+      const idx = sol.indexOf(guess[i]);
+      if(idx !== -1){ res[i] = "yellow"; sol[idx] = null; }
     }
   }
 
   for(let i=0;i<5;i++){
-    const t=document.getElementById(`tile-${row}-${i}`);
-    if(res[i]==="green") t.style.background="var(--green)";
-    else if(res[i]==="yellow") t.style.background="var(--yellow)";
-    else t.style.background="var(--gray)";
+    const t = document.getElementById(`tile-${row}-${i}`);
+    if(res[i] === "green") t.style.background = "var(--green)";
+    else if(res[i] === "yellow") t.style.background = "var(--yellow)";
+    else t.style.background = "var(--gray)";
   }
-  updateKeyboard(guess,res);
+  updateKeyboard(guess, res);
 }
 
-function updateKeyboard(guess,res){
+function updateKeyboard(guess, res){
   for(let i=0;i<5;i++){
-    const letter=guess[i];
-    const keys=[...document.querySelectorAll('.key')].filter(k=>k.textContent===letter);
+    const letter = guess[i];
+    const keys = [...document.querySelectorAll('.key')].filter(k=>k.textContent === letter);
     keys.forEach(k=>{
-      if(res[i]==="green") k.className="key green";
-      else if(res[i]==="yellow" && !k.classList.contains("green")) k.className="key yellow";
-      else if(res[i]==="gray") k.className="key dark";
+      if(res[i] === "green") k.className = "key green";
+      else if(res[i] === "yellow" && !k.classList.contains("green")) k.className = "key yellow";
+      else if(res[i] === "gray") k.className = "key dark";
     });
   }
 }
 
 function selectTile(r,c){
   document.querySelectorAll('.tile').forEach(t=>t.classList.remove('active'));
-  row=r; col=c;
-  const t=document.getElementById(`tile-${r}-${c}`);
+  row = r; col = c;
+  const t = document.getElementById(`tile-${r}-${c}`);
   if(t) t.classList.add('active');
 }
 
+// Popup
 function showModal(title,text){
-  document.getElementById("modalTitle").textContent=title;
-  document.getElementById("modalText").textContent=text;
-  document.getElementById("modal").style.display="flex";
+  document.getElementById("modalTitle").textContent = title;
+  document.getElementById("modalText").textContent = text;
+  document.getElementById("modal").style.display = "flex";
 }
-function closeModal(){
-  document.getElementById("modal").style.display="none";
+window.closeModal = function(){
+  document.getElementById("modal").style.display = "none";
   startGame();
-
-  // ===== Physical keyboard support (A–Z + accents) via hidden input =====
-  const map = {
-    'é':'E','è':'E','ê':'E','ë':'E',
-    'à':'A','â':'A','ä':'A',
-    'î':'I','ï':'I',
-    'ô':'O','ö':'O',
-    'ù':'U','û':'U','ü':'U',
-    'ç':'C'
-  };
-  const kbd = document.getElementById('kbd-capture');
-  kbd.addEventListener('keydown', (e) => {
-    if(gameOver) return;
-    if(e.key === 'Enter'){ e.preventDefault(); onEnter(); return; }
-    if(e.key === 'Backspace'){ e.preventDefault(); onBack(); return; }
-    let key = e.key;
-    if(map[key]) key = map[key];
-    else key = key.toUpperCase();
-    if(/^[A-Z]$/.test(key)){
-      e.preventDefault();
-      handleKey(key);
-    }
-  });
-
-  // ===== Physical keyboard support (A–Z + accents) =====
-   return; }
-    if(e.key === 'Backspace'){ onBack(); return; }
-
-    const map = {
-      'é':'E','è':'E','ê':'E','ë':'E',
-      'à':'A','â':'A','ä':'A',
-      'î':'I','ï':'I',
-      'ô':'O','ö':'O',
-      'ù':'U','û':'U','ü':'U',
-      'ç':'C'
-    };
-
-    let key = e.key;
-    if(map[key]) key = map[key];
-    else key = key.toUpperCase();
-
-    if(/^[A-Z]$/.test(key)){
-      handleKey(key);
-    }
-  });
-
-// ===== Physical keyboard support (A–Z + accents) =====
-
-  if(e.key === 'Backspace') return onBack();
-
-  const map = {
-    'é':'E','è':'E','ê':'E','ë':'E',
-    'à':'A','â':'A','ä':'A',
-    'î':'I','ï':'I',
-    'ô':'O','ö':'O',
-    'ù':'U','û':'U','ü':'U',
-    'ç':'C'
-  };
-
-  let key = e.key.toLowerCase();
-  if(map[key]) key = map[key];
-  else key = key.toUpperCase();
-
-  if(/^[A-Z]$/.test(key)){
-    handleKey(key);
-  }
-});
-
-// ===== Physical keyboard support (A–Z + accents) =====
-
-  if(e.key === 'Backspace') return onBack();
-
-  // Normalize accented letters to base letter
-  const map = {
-    'é':'E','è':'E','ê':'E','ë':'E',
-    'à':'A','â':'A','ä':'A',
-    'î':'I','ï':'I',
-    'ô':'O','ö':'O',
-    'ù':'U','û':'U','ü':'U',
-    'ç':'C'
-  };
-
-  let key = e.key.toLowerCase();
-  if(map[key]) key = map[key];
-  else key = key.toUpperCase();
-
-  if(/^[A-Z]$/.test(key)){
-    handleKey(key);
-  }
-});
 }
+
+// Clavier physique via input caché
+const accentMap = {
+  'é':'E','è':'E','ê':'E','ë':'E',
+  'à':'A','â':'A','ä':'A',
+  'î':'I','ï':'I',
+  'ô':'O','ö':'O',
+  'ù':'U','û':'U','ü':'U',
+  'ç':'C'
+};
+
+kbd.addEventListener('keydown', e => {
+  if(gameOver) return;
+  if(e.key === 'Enter'){ e.preventDefault(); onEnter(); return; }
+  if(e.key === 'Backspace'){ e.preventDefault(); onBack(); return; }
+
+  let key = e.key;
+  if(accentMap[key]) key = accentMap[key];
+  else key = key.toUpperCase();
+
+  if(/^[A-Z]$/.test(key)){
+    e.preventDefault();
+    handleKey(key);
+  }
+});
+
+// Reprendre le focus clavier au clic
+ document.body.addEventListener('click', ()=> kbd.focus());
 
 startGame();
 });
