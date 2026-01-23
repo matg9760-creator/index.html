@@ -92,6 +92,35 @@ h1{ letter-spacing:4px; margin:0; }
 <script>
 document.addEventListener("DOMContentLoaded", () => {
 
+// ===== Sounds (Wordle-like, Web Audio API) =====
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+const audioCtx = new AudioCtx();
+
+function playTone(freq, duration, type='sine', volume=0.12){
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = type;
+  osc.frequency.value = freq;
+  gain.gain.value = volume;
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.start();
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+  osc.stop(audioCtx.currentTime + duration);
+}
+
+function soundTap(){ playTone(520, 0.05, 'square', 0.08); }
+function soundEnter(){ playTone(420, 0.08, 'triangle', 0.12); }
+function soundWin(){ playTone(660, 0.12, 'sine', 0.15); setTimeout(()=>playTone(880, 0.15, 'sine', 0.18), 140); }
+function soundLose(){ playTone(220, 0.18, 'sawtooth', 0.12); }
+
+// resume audio after first interaction
+window.addEventListener('click', ()=>{
+  if(audioCtx.state === 'suspended') audioCtx.resume();
+}, { once:true });
+
+
+
 const WORDS = ["AMOUR","MAISON","FRUIT","ECOLE","POINT","BLANC","ROUGE","BLEU","NOIR","TABLE"];
 let solution = "";
 let board = [];
@@ -148,6 +177,7 @@ function renderKeyboard(){
 }
 
 function handleKey(letter){
+  soundTap();
   if(gameOver) return;
   if(col < 5){
     board[row][col] = letter;
@@ -157,6 +187,7 @@ function handleKey(letter){
 }
 
 function onBack(){
+  soundTap();
   if(gameOver) return;
   if(col > 0) col--;
   board[row][col] = "";
@@ -165,15 +196,18 @@ function onBack(){
 }
 
 function onEnter(){
+  soundEnter();
   if(gameOver) return;
   if(board[row].includes("")) return;
   revealRow();
   if(board[row].join("") === solution){
+    soundWin();
     showModal("Bravo !", "Mot trouvé : " + solution);
     gameOver = true; return;
   }
   row++; col = 0;
   if(row >= 6){
+    soundLose();
     showModal("Perdu", "Mot : " + solution);
     gameOver = true; return;
   }
