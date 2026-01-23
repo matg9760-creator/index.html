@@ -35,7 +35,9 @@ h1{letter-spacing:4px;margin:10px 0}
   display:flex;align-items:center;justify-content:center;
   font-size:28px;font-weight:bold;
   user-select:none;
+  cursor:pointer;
 }
+.tile.active{border-color:#5383ff;box-shadow:0 0 0 2px rgba(83,131,255,.35) inset}
 .tile.green{background:var(--green);border-color:var(--green);color:#fff}
 .tile.yellow{background:var(--yellow);border-color:var(--yellow);color:#fff}
 .tile.gray{background:var(--gray);border-color:var(--gray);color:#fff}
@@ -63,6 +65,13 @@ h1{letter-spacing:4px;margin:10px 0}
 <div class="app">
 <header>
   <h1>WORDLE</h1>
+  <div style="margin-bottom:8px;">
+    <label>Mode :</label>
+    <select id="modeSelect">
+      <option value="5">5 lettres</option>
+      <option value="6">6 lettres</option>
+    </select>
+  </div>
   <button id="startBtn">Jouer</button>
 </header>
 <div id="board"></div>
@@ -70,26 +79,53 @@ h1{letter-spacing:4px;margin:10px 0}
 </div>
 
 <script>
-/*************** DICTIONNAIRE SIMPLE (TEST) ***************/
-const WORDS = ['SALON','TABLE','PORTE','LIVRE','STYLO','MAISON','JARDIN','PLAGES','SOLEIL'];
+/*************** DICTIONNAIRES (TEST) ***************/
+const WORDS_5 = ['SALON','TABLE','PORTE','LIVRE','STYLO','PLAGE','FLEUR','NEIGE','SABLE','TRAIN'];
+const WORDS_6 = ['MAISON','JARDIN','PLAGES','SOLEIL','ROUTES','ECOLES','AMOURS','NEIGES','BUREAU','VOYAGE'];
 
-/*************** ETAT DU JEU ***************/
+/*************** ÉTAT DU JEU ***************/
 let solution = '';
 let currentRow = 0;
 let currentCol = 0;
 let grid = [];
 let gameOver = false;
-const WORD_LENGTH = 5;
+let gameStarted = false; // une seule déclaration, contrôle du cycle de vie
+let WORD_LENGTH = 5;
 const MAX_ROWS = 6;
 
 const board = document.getElementById('board');
 const keyboard = document.getElementById('keyboard');
+const startBtn = document.getElementById('startBtn');
+const modeSelect = document.getElementById('modeSelect');
+
+/*************** SÉLECTION DE CASE ***************/
+function selectTile(r,c){
+  if(gameOver) return;
+  if(r !== currentRow) return; // uniquement la ligne courante
+  document.querySelectorAll('.tile.active').forEach(t=>t.classList.remove('active'));
+  currentRow = r;
+  currentCol = c;
+  const tile = document.getElementById(`tile-${r}-${c}`);
+  if(tile) tile.classList.add('active');
+}
 
 /*************** INITIALISATION ***************/
 function startGame(){
-  solution = WORDS[Math.floor(Math.random()*WORDS.length)];
-  console.log('Mot:', solution); // pour debug
-  currentRow = 0; currentCol = 0; gameOver = false;
+  // Empêche tout redémarrage en cours de partie
+  if(gameStarted) return;
+  gameStarted = true;
+
+  startBtn.disabled = true; // empêche un redémarrage accidentel
+  startBtn.blur();
+
+  WORD_LENGTH = parseInt(modeSelect.value,10);
+  const list = WORD_LENGTH === 5 ? WORDS_5 : WORDS_6;
+  solution = list[Math.floor(Math.random()*list.length)];
+  console.log('Mot:', solution); // debug
+
+  currentRow = 0;
+  currentCol = 0;
+  gameOver = false;
   grid = Array.from({length:MAX_ROWS},()=>Array(WORD_LENGTH).fill(''));
   drawBoard();
   drawKeyboard();
@@ -106,10 +142,12 @@ function drawBoard(){
       const tile=document.createElement('div');
       tile.className='tile';
       tile.id=`tile-${r}-${c}`;
+      tile.onclick=()=>selectTile(r,c);
       row.appendChild(tile);
     }
     board.appendChild(row);
   }
+  selectTile(0,0);
 }
 
 /*************** CLAVIER ***************/
@@ -117,40 +155,61 @@ const KEYS = ['AZERTYUIOP','QSDFGHJKLM','WXCVBN'];
 function drawKeyboard(){
   keyboard.innerHTML='';
   KEYS.forEach(line=>{
-    const row=document.createElement('div'); row.className='kb-row';
+    const row=document.createElement('div');
+    row.className='kb-row';
     [...line].forEach(letter=>{
       const key=document.createElement('div');
-      key.className='key'; key.textContent=letter;
+      key.className='key';
+      key.textContent=letter;
       key.onclick=()=>handleKey(letter);
       row.appendChild(key);
     });
     keyboard.appendChild(row);
   });
-  const row=document.createElement('div'); row.className='kb-row';
-  const enter=document.createElement('div'); enter.className='key wide'; enter.textContent='Entrer'; enter.onclick=checkWord;
-  const back=document.createElement('div'); back.className='key wide'; back.textContent='Suppr'; back.onclick=backspace;
-  row.appendChild(enter); row.appendChild(back);
+  const row=document.createElement('div');
+  row.className='kb-row';
+  const enter=document.createElement('div');
+  enter.className='key wide';
+  enter.textContent='Entrer';
+  enter.onclick=checkWord;
+  const back=document.createElement('div');
+  back.className='key wide';
+  back.textContent='Suppr';
+  back.onclick=backspace;
+  row.appendChild(enter);
+  row.appendChild(back);
   keyboard.appendChild(row);
 }
 
 /*************** SAISIE ***************/
 function handleKey(letter){
-  if(gameOver || currentCol>=WORD_LENGTH) return;
+  if(gameOver) return;
+  if(currentCol>=WORD_LENGTH) return;
   grid[currentRow][currentCol]=letter;
-  document.getElementById(`tile-${currentRow}-${currentCol}`).textContent=letter;
-  currentCol++;
+  const t = document.getElementById(`tile-${currentRow}-${currentCol}`);
+  if(t) t.textContent=letter;
+  if(currentCol < WORD_LENGTH-1){
+    selectTile(currentRow, currentCol+1);
+  } else {
+    selectTile(currentRow, currentCol);
+  }
 }
 
 function backspace(){
-  if(gameOver || currentCol===0) return;
-  currentCol--;
+  if(gameOver) return;
+  if(grid[currentRow][currentCol]==='' && currentCol>0){
+    selectTile(currentRow, currentCol-1);
+  }
   grid[currentRow][currentCol]='';
-  document.getElementById(`tile-${currentRow}-${currentCol}`).textContent='';
+  const t = document.getElementById(`tile-${currentRow}-${currentCol}`);
+  if(t) t.textContent='';
 }
 
 /*************** LOGIQUE WORDLE ***************/
 function checkWord(){
   if(gameOver) return;
+  document.querySelectorAll('.tile.active').forEach(t=>t.classList.remove('active'));
+
   const guess = grid[currentRow].join('');
   if(guess.length<WORD_LENGTH){
     document.querySelectorAll('.row')[currentRow].classList.add('shake');
@@ -182,20 +241,28 @@ function checkWord(){
   // Appliquer couleurs
   for(let i=0;i<WORD_LENGTH;i++){
     const tile=document.getElementById(`tile-${currentRow}-${i}`);
+    tile.classList.remove('green','yellow','gray');
     tile.classList.add(result[i]);
     colorKey(guess[i], result[i]);
   }
 
   if(guess===solution){
-    gameOver=true;
+    gameOver = true;
+    gameStarted = false;
+    startBtn.disabled = false;
     alert('Bravo !');
     return;
   }
 
   currentRow++;
   currentCol=0;
+  if(!gameOver && currentRow<MAX_ROWS){
+    selectTile(currentRow,0);
+  }
   if(currentRow>=MAX_ROWS){
-    gameOver=true;
+    gameOver = true;
+    gameStarted = false;
+    startBtn.disabled = false;
     alert('Perdu ! Mot : '+solution);
   }
 }
@@ -216,13 +283,24 @@ function colorKey(letter,color){
 
 /*************** CLAVIER PHYSIQUE ***************/
 window.addEventListener('keydown',e=>{
+  if(['Enter','Backspace'].includes(e.key)){
+    e.preventDefault();
+  }
   if(e.key>='a' && e.key<='z') handleKey(e.key.toUpperCase());
   if(e.key==='Backspace') backspace();
   if(e.key==='Enter') checkWord();
 });
 
+/*************** TESTS AUTOMATIQUES ***************/
+console.assert(typeof startGame === 'function', 'startGame est défini');
+console.assert(typeof drawBoard === 'function', 'drawBoard est défini');
+console.assert(typeof checkWord === 'function', 'checkWord est défini');
+console.assert(Array.isArray(WORDS_5) && WORDS_5.length>0, 'WORDS_5 valide');
+console.assert(Array.isArray(WORDS_6) && WORDS_6.length>0, 'WORDS_6 valide');
+console.assert(MAX_ROWS === 6, 'MAX_ROWS vaut 6');
+
 /*************** LANCEMENT ***************/
-document.getElementById('startBtn').addEventListener('click', startGame);
+startBtn.addEventListener('click', startGame);
 </script>
 </body>
 </html>
