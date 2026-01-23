@@ -1,523 +1,78 @@
 <!doctype html>
 <html lang="fr">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Clone Wordle (FR) — 5/6 lettres, 3 niveaux</title>
-  <style>
-    :root{
-      --bg:#121213;
-      --tile-bg:#121213;
-      --tile-border:#3a3a3c;
-      --text:#d7dadc;
-      --green:#6aaa64;   /* Wordle green */
-      --yellow:#c9b458;  /* Wordle yellow */
-      --gray:#3a3a3c;    /* Wordle gray */
-      --accent:#5383ff;
-      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-    }
-    html,body{height:100%;margin:0;background:var(--bg);color:var(--text);display:flex;align-items:center;justify-content:center}
-    .app{width:760px;max-width:95%;}
-    header{display:flex;align-items:center;justify-content:center;margin-bottom:20px}
-    h1{font-size:20px;margin:0}
-    .controls{display:flex;gap:8px;align-items:center}
-    select,input[type=file]{background:#0f0f10;border:1px solid #222;padding:8px;border-radius:6px;color:var(--text)}
-    button{background:var(--accent);border:none;padding:8px 12px;border-radius:6px;color:white;cursor:pointer}
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wordle FR - Stable</title>
+<style>
+:root{
+  --bg:#121213;
+  --tile:#121213;
+  --border:#3a3a3c;
+  --text:#d7dadc;
+  --green:#6aaa64;
+  --yellow:#c9b458;
+  --gray:#3a3a3c;
+}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  display:flex;
+  justify-content:center;
+}
+.app{
+  max-width:420px;
+  width:100%;
+  padding:10px;
+}
+header{
+  text-align:center;
+  margin:10px 0;
+}
+h1{letter-spacing:4px}
+.board{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  align-items:center;
+}
+.row{display:flex;gap:6px}
+.tile{
+  width:58px;height:58px;
+  border:2px solid var(--border);
+  background:var(--tile);
+  display:flex;align-items:center;justify-content:center;
+  font-size:28px;font-weight:bold;
+}
+.tile.active{border-color:#5383ff}
+.keyboard{margin-top:20px}
+.kb-row{display:flex;justify-content:center;gap:5px;margin-bottom:6px}
+.key{
+  background:#818384;color:white;
+  padding:12px;border-radius:4px;
+  font-weight:bold;min-width:28px;text-align:center;
+  cursor:pointer;user-select:none;
+}
+.key.wide{min-width:50px}
+.key.green{background:var(--green)}
+.key.yellow{background:var(--yellow)}
+.key.dark{background:#1f1f1f;color:#777}
 
-    .board{
-      display:flex;
-      flex-direction:column;
-      gap:8px;
-      justify-content:center;
-      align-items:center;
-    }
-    .row{
-      display:flex;
-      gap:8px;
-    }
-    .tile{
-      cursor:pointer;
-      
-      width:62px;
-      height:62px;
-      border-radius:4px;
-      border:2px solid #3a3a3c;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-weight:700;
-      font-size:32px;
-      background:#121213;
-      color:#d7dadc;
-      text-transform:uppercase;
-      box-sizing:border-box;
-    }
-    .tile.small{width:48px;height:48px;font-size:20px}
-
-    .keyboard{margin-top:14px;display:flex;flex-direction:column;gap:8px;align-items:center}
-    .kb-row{display:flex;gap:6px}
-    .key{padding:10px 12px;border-radius:6px;background:#0f0f10;border:1px solid #222;color:var(--text);cursor:pointer;user-select:none;font-weight:600}
-    .key.wide{padding:10px 18px}
-
-    .controls small{color:#9aa0a6;display:block}
-    footer{margin-top:12px;color:#9aa0a6;font-size:13px}
-
-    /* reveal animations */
-    .reveal{animation:flip 600ms ease forwards;transform-origin:center}
-    @keyframes flip{0%{transform:rotateX(0deg)}50%{transform:rotateX(-90deg)}100%{transform:rotateX(0deg)}}
-
-    .hint{font-size:13px;color:#9aa0a6}
-  
-    /* ===== Wordle pixel-perfect adjustments ===== */
-    .keyboard{
-      margin-top:24px;
-    }
-    .kb-row{
-      gap:6px;
-    }
-    .key{
-      min-width:42px;
-      height:58px;
-      padding:0 6px;
-      border-radius:4px;
-      background:#818384;
-      border:none;
-      color:#ffffff;
-      font-weight:700;
-      font-size:14px;
-      text-transform:uppercase;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-    }
-    .key.wide{
-      min-width:64px;
-      font-size:12px;
-    }
-
-    /* Tile animations closer to Wordle */
-    .tile{
-      transition: transform 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
-    }
-    .tile.pop{
-      animation: pop 120ms ease-in-out;
-    }
-    @keyframes pop{
-      0%{transform:scale(1)}
-      50%{transform:scale(1.1)}
-      100%{transform:scale(1)}
-    }
-
-    .reveal{
-      animation: flip 600ms ease forwards;
-      transform-style: preserve-3d;
-    }
-    @keyframes flip{
-      0%{transform:rotateX(0deg)}
-      45%{transform:rotateX(-90deg)}
-      55%{transform:rotateX(-90deg)}
-      100%{transform:rotateX(0deg)}
-    }
-
-  
-    /* ===== Wordle Popups (Victory / Defeat) ===== */
-    .modal-overlay{
-      position:fixed;
-      inset:0;
-      background:rgba(0,0,0,0.6);
-      display:none;
-      align-items:center;
-      justify-content:center;
-      z-index:999;
-    }
-    .modal{
-      background:#1a1a1b;
-      color:#ffffff;
-      border-radius:10px;
-      width:90%;
-      max-width:320px;
-      padding:20px;
-      text-align:center;
-      box-shadow:0 10px 30px rgba(0,0,0,0.6);
-      animation: popup 250ms ease-out;
-    }
-    @keyframes popup{
-      0%{transform:scale(0.7);opacity:0}
-      100%{transform:scale(1);opacity:1}
-    }
-    .modal h2{margin:0 0 10px 0;font-size:22px}
-    .modal p{margin:0 0 15px 0;color:#d7dadc}
-    .modal button{
-      background:#5383ff;
-      border:none;
-      color:white;
-      padding:8px 14px;
-      border-radius:6px;
-      cursor:pointer;
-      font-weight:700;
-    }
-    
-    /* ===== Victory Animations (Shake + Bounce) ===== */
-    .board.win-shake{animation: win-shake 600ms ease}
-    @keyframes win-shake{
-      0%{transform:translateX(0)}
-      15%{transform:translateX(-6px)}
-      30%{transform:translateX(6px)}
-      45%{transform:translateX(-4px)}
-      60%{transform:translateX(4px)}
-      75%{transform:translateX(-2px)}
-      100%{transform:translateX(0)}
-    }
-
-    .board.win-bounce{animation: win-bounce 800ms cubic-bezier(.34,1.56,.64,1)}
-    @keyframes win-bounce{
-      0%{transform:scale(1)}
-      30%{transform:scale(1.06)}
-      55%{transform:scale(0.97)}
-      75%{transform:scale(1.03)}
-      100%{transform:scale(1)}
-    }
-
-
-
-    /* ===== Mobile Perfect Mode ===== */
-    @media (max-width: 600px){
-      html,body{
-        align-items:flex-start;
-        justify-content:flex-start;
-      }
-      .app{
-        width:100%;
-        max-width:100%;
-        padding:8px 6px env(safe-area-inset-bottom);
-        box-sizing:border-box;
-      }
-      header{
-        margin:10px 0 8px 0;
-      }
-      h1{
-        font-size:18px;
-        letter-spacing:3px;
-      }
-      .board{
-        gap:6px;
-        margin-top:6px;
-      }
-      .row{
-        gap:6px;
-      }
-      .tile{
-        width:48px;
-        height:48px;
-        font-size:22px;
-        border-width:2px;
-      }
-      .keyboard{
-        margin-top:10px;
-        gap:6px;
-      }
-      .kb-row{
-        gap:4px;
-      }
-      .key{
-        min-width:28px;
-        height:46px;
-        font-size:12px;
-        border-radius:4px;
-        padding:0 4px;
-      }
-      .key.wide{
-        min-width:44px;
-        font-size:11px;
-      }
-      .modal{
-        max-width:280px;
-        padding:16px;
-      }
-    }
-
-    /* Extra small phones */
-    @media (max-width: 380px){
-      .tile{
-        width:42px;
-        height:42px;
-        font-size:20px;
-      }
-      .key{
-        min-width:24px;
-        height:42px;
-        font-size:11px;
-      }
-      .key.wide{
-        min-width:38px;
-      }
-    }
-
-
-    /* ===== Tile selection ===== */
-    .tile.active{
-      border-color:#5383ff;
-      box-shadow:0 0 0 2px rgba(83,131,255,0.4);
-    }
-
-
-    /* ===== Keyboard colors like Wordle ===== */
-    .key.green{background:var(--green) !important; color:#fff}
-    .key.yellow{background:var(--yellow) !important; color:#fff}
-    .key.gray{background:#3a3a3c !important; color:#fff}
-    .key.dark{background:#1f1f1f !important; color:#777}
-
+/* popup */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center}
+.modal{background:#1a1a1b;padding:20px;border-radius:8px;text-align:center}
+.modal button{margin-top:10px;padding:6px 12px}
 </style>
 </head>
 <body>
-  <div class="app">
-    <header>
-      <h1 style="letter-spacing:4px;font-weight:700">WORDLE</h1>
-      
-    </header>
+<div class="app">
+<header><h1>WORDLE</h1></header>
+<div id="boardWrap"></div>
+<div id="keyboard" class="keyboard"></div>
+</div>
 
-    <div id="boardWrap">
-      <!-- board injected here -->
-    </div>
-
-    <div class="keyboard" id="keyboard"></div>
-    <div style="height:10px"></div>
-    
-    
-  </div>
-
-<script>
-/*********************
- * WORDLE CLONE – CLEAN STABLE VERSION
- *********************/
-
-// ===== POPUP SYSTEM =====
-function showModal(type, word=''){
-  const modal = document.getElementById('modal');
-  const title = document.getElementById('modalTitle');
-  const text = document.getElementById('modalText');
-
-  if(type === 'win'){
-    title.textContent = 'Bravo !';
-    text.textContent = 'Tu as trouvé le mot : ' + word;
-  } else {
-    title.textContent = 'Perdu !';
-    text.textContent = 'Le mot était : ' + word;
-  }
-  modal.style.display = 'flex';
-}
-
-function closeModal(){
-  document.getElementById('modal').style.display = 'none';
-  startGame();
-}
-
-// ===== Victory animation =====
-function animateWin(){
-  const board = document.querySelector('.board');
-  if(!board) return;
-  board.classList.add('win-shake');
-  setTimeout(()=>{
-    board.classList.remove('win-shake');
-    board.classList.add('win-bounce');
-    setTimeout(()=>board.classList.remove('win-bounce'),900);
-  },600);
-}
-
-// ===== Sounds =====
-const AudioCtx = window.AudioContext || window.webkitAudioContext;
-const audioCtx = new AudioCtx();
-function playTone(freq,duration,type='sine',vol=0.15){
-  const o = audioCtx.createOscillator();
-  const g = audioCtx.createGain();
-  o.type=type; o.frequency.value=freq; g.gain.value=vol;
-  o.connect(g); g.connect(audioCtx.destination);
-  o.start(); g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+duration);
-  o.stop(audioCtx.currentTime+duration);
-}
-function soundTap(){ playTone(520,0.05,'square',0.08); }
-function soundEnter(){ playTone(440,0.08,'triangle',0.12); }
-function soundWin(){ playTone(660,0.12,'sine',0.15); setTimeout(()=>playTone(880,0.15,'sine',0.18),150); }
-function soundLose(){ playTone(220,0.2,'sawtooth',0.12); }
-
-window.addEventListener('click',()=>{ if(audioCtx.state==='suspended') audioCtx.resume(); },{once:true});
-
-// ===== Data =====
-const WORDS = ['AMOUR','MAISON','FRUIT','ECOLE','POINT','BLANC','NOIR','ROUGE','BLEU','ARGOT','TABLE','CHIEN','CHAT','PARIS','LUNDI'];
-let solution = '';
-let board = [];
-let currentRow = 0;
-let currentCol = 0;
-let gameOver = false;
-
-const boardWrap = document.getElementById('boardWrap');
-const keyboardDiv = document.getElementById('keyboard');
-
-// ===== Game =====
-function startGame(){
-  solution = WORDS[Math.floor(Math.random()*WORDS.length)];
-  board = Array.from({length:6},()=>Array.from({length:5},()=>''));
-  currentRow = 0; currentCol = 0; gameOver = false;
-  renderBoard(); renderKeyboard(); selectTile(0,0);
-}
-
-function renderBoard(){
-  boardWrap.innerHTML='';
-  const b = document.createElement('div'); b.className='board';
-  for(let r=0;r<6;r++){
-    const row=document.createElement('div'); row.className='row';
-    for(let c=0;c<5;c++){
-      const t=document.createElement('div');
-      t.className='tile'; t.id=`tile-${r}-${c}`;
-      t.addEventListener('click',()=>selectTile(r,c));
-      t.addEventListener('touchstart',e=>{e.preventDefault();selectTile(r,c);},{passive:false});
-      row.appendChild(t);
-    }
-    b.appendChild(row);
-  }
-  boardWrap.appendChild(b);
-}
-
-// ===== Keyboard =====
-const KB = ['AZERTYUIOP','QSDFGHJKLM','WXCVBN'];
-function renderKeyboard(){
-  keyboardDiv.innerHTML='';
-  KB.forEach(r=>{
-    const d=document.createElement('div'); d.className='kb-row';
-    [...r].forEach(ch=>{
-      const k=document.createElement('div'); k.className='key'; k.textContent=ch;
-      const h=()=>handleKey(ch);
-      k.onclick=h;
-      k.addEventListener('touchstart',e=>{e.preventDefault();h();},{passive:false});
-      d.appendChild(k);
-    });
-    keyboardDiv.appendChild(d);
-  });
-  const act=document.createElement('div'); act.className='kb-row';
-  const enter=document.createElement('div'); enter.className='key wide'; enter.textContent='Entrer';
-  enter.onclick=onEnter; enter.addEventListener('touchstart',e=>{e.preventDefault();onEnter();},{passive:false});
-  const back=document.createElement('div'); back.className='key wide'; back.textContent='Suppr';
-  back.onclick=onBack; back.addEventListener('touchstart',e=>{e.preventDefault();onBack();},{passive:false});
-  act.appendChild(enter); act.appendChild(back); keyboardDiv.appendChild(act);
-}
-
-function handleKey(ch){
-  if(gameOver) return; soundTap();
-  board[currentRow][currentCol]=ch;
-  const t=document.getElementById(`tile-${currentRow}-${currentCol}`);
-  t.textContent=ch;
-  if(currentCol<4) selectTile(currentRow,currentCol+1);
-}
-
-function onBack(){
-  if(gameOver) return; soundTap();
-  board[currentRow][currentCol]='';
-  const t=document.getElementById(`tile-${currentRow}-${currentCol}`);
-  t.textContent='';
-  if(currentCol>0) selectTile(currentRow,currentCol-1);
-}
-
-function onEnter(){
-  if(gameOver) return; soundEnter();
-  const guess = board[currentRow].join('');
-  if(board[currentRow].some(c=>c==='')) return;
-  revealRow(guess);
-  if(guess===solution){
-    gameOver=true; soundWin(); animateWin();
-    setTimeout(()=>showModal('win',solution),1200); return;
-  }
-  currentRow++; currentCol=0;
-  if(currentRow>=6){ gameOver=true; soundLose(); setTimeout(()=>showModal('lose',solution),600); }
-  else selectTile(currentRow,0);
-}
-
-function revealRow(guess){
-  const sol=[...solution];
-  const res=Array(5).fill('gray');
-
-  // Greens
-  for(let i=0;i<5;i++){
-    if(guess[i]===sol[i]){
-      res[i]='green';
-      sol[i]=null;
-    }
-  }
-  // Yellows
-  for(let i=0;i<5;i++){
-    if(res[i]==='gray'){
-      const idx = sol.indexOf(guess[i]);
-      if(idx!==-1){
-        res[i]='yellow';
-        sol[idx]=null;
-      }
-    }
-  }
-
-  // Apply tile colors
-  for(let i=0;i<5;i++){
-    const t=document.getElementById(`tile-${currentRow}-${i}`);
-    setTimeout(()=>{
-      t.style.background = res[i]==='green'?'var(--green)':res[i]==='yellow'?'var(--yellow)':'var(--gray)';
-      t.style.color='#fff';
-      t.style.border='none';
-    },i*150);
-  }
-
-  // Update keyboard colors (dark for absent letters)
-  updateKeyboardColors(guess, res);
-}
-
-  for(let i=0;i<5;i++){
-    const t=document.getElementById(`tile-${currentRow}-${i}`);
-    setTimeout(()=>{
-      t.style.background = res[i]==='green'?'var(--green)':res[i]==='yellow'?'var(--yellow)':'var(--gray)';
-      t.style.color='#fff'; t.style.border='none';
-    },i*150);
-  }
-}
-
-// ===== Keyboard update =====
-function updateKeyboardColors(guess, res){
-  for(let i=0;i<5;i++){
-    const letter = guess[i];
-    const state = res[i];
-    const keys = [...document.querySelectorAll('.key')].filter(k=>k.textContent===letter);
-    keys.forEach(k=>{
-      // priority: green > yellow > dark
-      if(k.classList.contains('green')) return;
-      if(k.classList.contains('yellow') && state==='gray') return;
-      k.classList.remove('green','yellow','gray','dark');
-      if(state==='green') k.classList.add('green');
-      else if(state==='yellow') k.classList.add('yellow');
-      else if(state==='gray') k.classList.add('dark');
-    });
-  }
-}
-
-// ===== Tile selection =====
-function selectTile(r,c){
-  if(gameOver) return; if(r!==currentRow) return;
-  document.querySelectorAll('.tile.active').forEach(t=>t.classList.remove('active'));
-  currentCol=c;
-  const t=document.getElementById(`tile-${r}-${c}`);
-  if(t) t.classList.add('active');
-}
-
-// ===== Physical keyboard =====
-window.addEventListener('keydown',e=>{
-  if(e.key==='Enter') onEnter();
-  else if(e.key==='Backspace') onBack();
-  else if(/^[a-zA-Z]$/.test(e.key)) handleKey(e.key.toUpperCase());
-});
-
-// ===== Start =====
-document.addEventListener('DOMContentLoaded', () => {
-  startGame();
-});
-</script>
-
-
-<!-- ===== POPUP HTML ===== -->
+<!-- Popup -->
 <div class="modal-overlay" id="modal">
   <div class="modal">
     <h2 id="modalTitle"></h2>
@@ -526,6 +81,149 @@ document.addEventListener('DOMContentLoaded', () => {
   </div>
 </div>
 
+<script>
+document.addEventListener("DOMContentLoaded",()=>{
+
+const WORDS = ["AMOUR","MAISON","FRUIT","ECOLE","POINT","BLANC","ROUGE","BLEU","NOIR","TABLE"];
+let solution="";
+let board=[];
+let row=0,col=0,gameOver=false;
+
+const boardWrap=document.getElementById("boardWrap");
+const keyboard=document.getElementById("keyboard");
+
+function startGame(){
+  solution = WORDS[Math.floor(Math.random()*WORDS.length)];
+  board = Array.from({length:6},()=>Array(5).fill(""));
+  row=0; col=0; gameOver=false;
+  renderBoard(); renderKeyboard(); selectTile(0,0);
+}
+
+function renderBoard(){
+  boardWrap.innerHTML="";
+  const b=document.createElement("div"); b.className="board";
+  for(let r=0;r<6;r++){
+    const line=document.createElement("div"); line.className="row";
+    for(let c=0;c<5;c++){
+      const t=document.createElement("div"); t.className="tile";
+      t.id=`tile-${r}-${c}`;
+      t.onclick=()=>selectTile(r,c);
+      line.appendChild(t);
+    }
+    b.appendChild(line);
+  }
+  boardWrap.appendChild(b);
+}
+
+const KB=["AZERTYUIOP","QSDFGHJKLM","WXCVBN"];
+function renderKeyboard(){
+  keyboard.innerHTML="";
+  KB.forEach(r=>{
+    const rowDiv=document.createElement("div"); rowDiv.className="kb-row";
+    [...r].forEach(ch=>{
+      const k=document.createElement("div"); k.className="key"; k.textContent=ch;
+      k.onclick=()=>handleKey(ch);
+      rowDiv.appendChild(k);
+    });
+    keyboard.appendChild(rowDiv);
+  });
+  const act=document.createElement("div"); act.className="kb-row";
+  const enter=document.createElement("div"); enter.className="key wide"; enter.textContent="Entrer";
+  enter.onclick=onEnter;
+  const back=document.createElement("div"); back.className="key wide"; back.textContent="Suppr";
+  back.onclick=onBack;
+  act.appendChild(enter); act.appendChild(back);
+  keyboard.appendChild(act);
+}
+
+function handleKey(ch){
+  if(gameOver) return;
+  if(col<5){
+    board[row][col]=ch;
+    document.getElementById(`tile-${row}-${col}`).textContent=ch;
+    if(col<4) selectTile(row,col+1);
+  }
+}
+
+function onBack(){
+  if(gameOver) return;
+  if(col>0){ col--; }
+  board[row][col]="";
+  document.getElementById(`tile-${row}-${col}`).textContent="";
+  selectTile(row,col);
+}
+
+function onEnter(){
+  if(gameOver) return;
+  if(board[row].includes("")) return;
+  revealRow();
+  if(board[row].join("")===solution){
+    showModal("Bravo !","Mot trouvé : "+solution);
+    gameOver=true; return;
+  }
+  row++; col=0;
+  if(row>=6){
+    showModal("Perdu","Mot : "+solution);
+    gameOver=true; return;
+  }
+  selectTile(row,0);
+}
+
+function revealRow(){
+  const guess=board[row].join("");
+  const sol=[...solution];
+  const res=Array(5).fill("gray");
+
+  for(let i=0;i<5;i++){
+    if(guess[i]===sol[i]){ res[i]="green"; sol[i]=null; }
+  }
+  for(let i=0;i<5;i++){
+    if(res[i]==="gray"){
+      const idx=sol.indexOf(guess[i]);
+      if(idx!==-1){ res[i]="yellow"; sol[idx]=null; }
+    }
+  }
+
+  for(let i=0;i<5;i++){
+    const t=document.getElementById(`tile-${row}-${i}`);
+    if(res[i]==="green") t.style.background="var(--green)";
+    else if(res[i]==="yellow") t.style.background="var(--yellow)";
+    else t.style.background="var(--gray)";
+  }
+  updateKeyboard(guess,res);
+}
+
+function updateKeyboard(guess,res){
+  for(let i=0;i<5;i++){
+    const letter=guess[i];
+    const keys=[...document.querySelectorAll('.key')].filter(k=>k.textContent===letter);
+    keys.forEach(k=>{
+      if(res[i]==="green") k.className="key green";
+      else if(res[i]==="yellow" && !k.classList.contains("green")) k.className="key yellow";
+      else if(res[i]==="gray") k.className="key dark";
+    });
+  }
+}
+
+function selectTile(r,c){
+  document.querySelectorAll('.tile').forEach(t=>t.classList.remove('active'));
+  row=r; col=c;
+  const t=document.getElementById(`tile-${r}-${c}`);
+  if(t) t.classList.add('active');
+}
+
+function showModal(title,text){
+  document.getElementById("modalTitle").textContent=title;
+  document.getElementById("modalText").textContent=text;
+  document.getElementById("modal").style.display="flex";
+}
+function closeModal(){
+  document.getElementById("modal").style.display="none";
+  startGame();
+}
+
+startGame();
+});
+</script>
 </body>
 </html>
-
