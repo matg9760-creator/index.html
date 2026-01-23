@@ -181,7 +181,7 @@ h1{ letter-spacing:4px; margin:0; }
 </div>
 
 <!-- Champ caché pour capter le clavier physique -->
-<input id="kbd-capture" type="text" autocomplete="off" autocapitalize="off" spellcheck="false"
+<input id="kbd-capture" readonly inputmode="none" type="text" autocomplete="off" autocapitalize="off" spellcheck="false"
        style="position:fixed;opacity:0;pointer-events:none;height:0;width:0;">
 
 <script>
@@ -238,7 +238,6 @@ function startGame(){
   renderBoard();
   renderKeyboard();
   selectTile(0,0);
-  kbd.focus();
 }
 
 const modeSelect = document.getElementById('modeSelect');
@@ -466,6 +465,9 @@ document.body.addEventListener('click', (e)=>{
 
 // Démarrage du jeu
 startGame();
+
+// Sur mobile/iPad : ne jamais donner le focus automatique à l’input caché
+// Le focus ne sera donné que si l’utilisateur clique sur le clavier virtuel
 
 });
 </script>
