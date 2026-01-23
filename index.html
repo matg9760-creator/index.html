@@ -166,12 +166,6 @@ h1{ letter-spacing:4px; margin:0; }
       <option value="hard">Difficile</option>
     </select>
   </div>
-    <label style="font-size:12px;color:#d7dadc;">Mode :</label>
-    <select id="modeSelect" style="background:#1a1a1b;color:white;border:1px solid #3a3a3c;border-radius:4px;padding:4px 6px;">
-      <option value="5">5 lettres</option>
-      <option value="6">6 lettres</option>
-    </select>
-  </div>
 </header>
   <div id="boardWrap"></div>
   <div id="keyboard" class="keyboard"></div>
@@ -317,7 +311,6 @@ function onBack(){
 function onEnter(){
   soundEnter();
   const rowEl = document.querySelectorAll('.row')[row];
-
   if(gameOver) return;
 
   // Vérification mode difficile (Hard mode)
@@ -354,16 +347,7 @@ function onEnter(){
   }
 
   revealRow();
-  soundEnter();
-  const rowEl = document.querySelectorAll('.row')[row];
 
-  soundEnter();
-  if(gameOver) return;
-  if(board[row].includes("")){
-    if(rowEl){ rowEl.classList.remove('shake'); void rowEl.offsetWidth; rowEl.classList.add('shake'); }
-    return;
-  }
-  revealRow();
   if(board[row].join("") === solution){
     const boardEl = document.querySelector('.board');
     if(boardEl){
@@ -375,10 +359,10 @@ function onEnter(){
       },650);
     }
     soundWin();
-    soundWin();
     showModal("Bravo !", "Mot trouvé : " + solution);
     gameOver = true; return;
   }
+
   row++; col = 0;
   if(row >= 6){
     soundLose();
@@ -386,6 +370,7 @@ function onEnter(){
     gameOver = true; return;
   }
   selectTile(row,0);
+}
 }
 
 function revealRow(){
