@@ -105,68 +105,28 @@ h1{ letter-spacing:4px; margin:0; }
   75%{transform:scale(1.03)}
   100%{transform:scale(1)}
 }
-
-
-/* ===== Animations Wordle ===== */
-.tile.pop{ animation: pop 120ms ease-in-out; }
-@keyframes pop{ 0%{transform:scale(1)} 50%{transform:scale(1.12)} 100%{transform:scale(1)} }
-
-.reveal{ animation: flip 600ms ease forwards; transform-style:preserve-3d; }
-@keyframes flip{ 0%{transform:rotateX(0deg)} 45%{transform:rotateX(-90deg)} 55%{transform:rotateX(-90deg)} 100%{transform:rotateX(0deg)} }
-
-.row.shake{ animation: row-shake 450ms ease; }
-@keyframes row-shake{
-  0%{transform:translateX(0)}
-  15%{transform:translateX(-6px)}
-  30%{transform:translateX(6px)}
-  45%{transform:translateX(-4px)}
-  60%{transform:translateX(4px)}
-  75%{transform:translateX(-2px)}
-  100%{transform:translateX(0)}
-}
-
-.board.win-shake{ animation: win-shake 600ms ease; }
-@keyframes win-shake{
-  0%{transform:translateX(0)}
-  15%{transform:translateX(-6px)}
-  30%{transform:translateX(6px)}
-  45%{transform:translateX(-4px)}
-  60%{transform:translateX(4px)}
-  75%{transform:translateX(-2px)}
-  100%{transform:translateX(0)}
-}
-
-.board.win-bounce{ animation: win-bounce 800ms cubic-bezier(.34,1.56,.64,1); }
-@keyframes win-bounce{
-  0%{transform:scale(1)}
-  30%{transform:scale(1.06)}
-  55%{transform:scale(0.97)}
-  75%{transform:scale(1.03)}
-  100%{transform:scale(1)}
-}
-
 </style>
 </head>
 <body>
 <div class="app">
   <header>
-  <h1>WORDLE</h1>
-  <div style="margin-top:8px;text-align:center;">
-    <label style="font-size:12px;color:#d7dadc;">Mode :</label>
-    <select id="modeSelect" style="background:#1a1a1b;color:white;border:1px solid #3a3a3c;border-radius:4px;padding:4px 6px;">
-      <option value="5">5 lettres</option>
-      <option value="6">6 lettres</option>
-    </select>
-  </div>
-  <div style="margin-top:6px;text-align:center;">
-    <label style="font-size:12px;color:#d7dadc;">Difficulté :</label>
-    <select id="difficultySelect" style="background:#1a1a1b;color:white;border:1px solid #3a3a3c;border-radius:4px;padding:4px 6px;">
-      <option value="easy">Facile</option>
-      <option value="normal" selected>Normal</option>
-      <option value="hard">Difficile</option>
-    </select>
-  </div>
-</header>
+    <h1>WORDLE</h1>
+    <div style="margin-top:8px;text-align:center;">
+      <label style="font-size:12px;color:#d7dadc;">Mode :</label>
+      <select id="modeSelect" style="background:#1a1a1b;color:white;border:1px solid #3a3a3c;border-radius:4px;padding:4px 6px;">
+        <option value="5">5 lettres</option>
+        <option value="6">6 lettres</option>
+      </select>
+    </div>
+    <div style="margin-top:6px;text-align:center;">
+      <label style="font-size:12px;color:#d7dadc;">Difficulté :</label>
+      <select id="difficultySelect" style="background:#1a1a1b;color:white;border:1px solid #3a3a3c;border-radius:4px;padding:4px 6px;">
+        <option value="easy">Facile</option>
+        <option value="normal" selected>Normal</option>
+        <option value="hard">Difficile</option>
+      </select>
+    </div>
+  </header>
   <div id="boardWrap"></div>
   <div id="keyboard" class="keyboard"></div>
 </div>
@@ -180,18 +140,30 @@ h1{ letter-spacing:4px; margin:0; }
   </div>
 </div>
 
-<!-- Champ caché pour capter le clavier physique -->
+<!-- Champ caché pour capter le clavier physique (désactivé sur mobile) -->
 <input id="kbd-capture" readonly inputmode="none" type="text" autocomplete="off" autocapitalize="off" spellcheck="false"
        style="position:fixed;opacity:0;pointer-events:none;height:0;width:0;">
 
 <script>
-document.addEventListener("DOMContentLoaded", () => {
+// ================================
+// Wordle FR - Version stable, sans caractères invalides
+// ================================
 
-// ===== Sounds (Wordle-like, Web Audio API) =====
+// ---------- Utilitaires de tests (auto-tests simples) ----------
+function assert(cond, msg){
+  if(!cond){ console.error('TEST FAILED:', msg); }
+  else{ console.log('TEST OK:', msg); }
+}
+
+// ---------- Sons (Web Audio API) ----------
 const AudioCtx = window.AudioContext || window.webkitAudioContext;
-const audioCtx = new AudioCtx();
+let audioCtx = null;
+function ensureAudio(){
+  if(!audioCtx){ audioCtx = new AudioCtx(); }
+}
 
 function playTone(freq, duration, type='sine', volume=0.12){
+  ensureAudio();
   const osc = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
   osc.type = type;
@@ -209,264 +181,107 @@ function soundEnter(){ playTone(420, 0.08, 'triangle', 0.12); }
 function soundWin(){ playTone(660, 0.12, 'sine', 0.15); setTimeout(()=>playTone(880, 0.15, 'sine', 0.18), 140); }
 function soundLose(){ playTone(220, 0.18, 'sawtooth', 0.12); }
 
-// resume audio after first interaction
-window.addEventListener('click', ()=>{
-  if(audioCtx.state === 'suspended') audioCtx.resume();
-}, { once:true });
+window.addEventListener('click', ()=>{ if(audioCtx && audioCtx.state==='suspended') audioCtx.resume(); }, { once:true });
 
-
-
+// ---------- Dictionnaires (ASCII uniquement, pas d'accents) ----------
 const WORDS_5 = [
-  "ABORD","ABRIT","ABUSE","ACTIF","ADORE","AFFUT","AGENT","AIGLE","AIMER","AJOUT","ALBUM","ALERT","ALINE","ALLER","AMOUR","ANGLE","ANCRE","APPEL","ARBRE","ARRET",
-  "AVION","AVOIR","BALAI","BANDE","BARBE","BASER","BATON","BEIGE","BELLE","BIBLE","BILAN","BIERE","BLANC","BLEUE","BLOND","BLOCS","BOIRE","BOITE","BOMBE","BOUTE",
-  "BOULE","BRUIT","CADRE","CALME","CANAL","CARTE","CASSE","CHAIR","CHAMP","CHAUD","CHIEN","CHOIR","CHOSE","CIBLE","CIELS","CIGAR","CLEFS","CLOWN","COEUR","COLLE",
-  "COMTE","CONTE","COUDE","COULE","COURT","CRANE","CREME","CROIX","DANSE","DENTS","DEBUT","DEGAT","DEMON","DOIGT","DOUTE","DOUZE","DOUZE","DROIT","DURER","ECOLE",
-  "ECRAN","ELITE","ENFER","ENNUI","ENTRA","ENVOI","EPAIS","ETANG","ETOLE","ETUDE","FAIRE","FAUTE","FEMME","FERME","FICHE","FILLE","FILON","FLEUR","FROID","FRUIT",
-  "FUMEE","GAINE","GALOP","GARDE","GAZON","GENRE","GESTE","GLACE","GLOBE","GOUTE","GRAIN","GRAND","GRAVE","GROIN","GUIDE","HABIT","HAINE","HERBE","HIBOU","HOTEL",
-  "HUILE","HUMUS","IDEAL","ILETS","IMAGE","IMPOT","INDEX","JAUNE","JEUNE","JOUER","JOURS","JUMBO","KILOS","LACET","LAINE","LAMPE","LARGE","LARME","LASER","LECON",
-  "LIGNE","LIMON","LITRE","LIVRE","LOGER","LOUER","LUNDI","LYCEE","MACHE","MAGIE","MAINS","MAIRE","MAJOR","MALIN","MAMAN","MARIN","MASSE","MATCH","MATIN","MAUVE",
-  "MEDIA","MEMES","MERCI","METAL","METRE","MIELS","MINEE","MODEM","MOINS","MONDE","MORAL","MOULE","MURIR","NACRE","NAVAL","NEIGE","NERFS","NOCES","NOEUD","NOIRS",
-  "NOTER","NOYAU","OCEAN","ODEUR","ONGLE","OPERA","ORAGE","OUBLI","OUVRE","PAIRE","PALME","PARIS","PARLE","PARTI","PASSE","PATTE","PAUSE","PEINE","PENSE","PETIT",
-  "PHARE","PIANO","PIEDS","PILOT","PINCE","PLACE","PLAIE","PLEIN","PLOMB","PLUME","POELE","POIDS","POINT","POIRE","POMME","PORTE","PRISE","PROIE","PROXY","PULSE",
-  "QUART","QUELS","RABAT","RADAR","RAIDE","RAMEE","RATIO","RAVIN","REBUS","REELS","REGLE","RELAI","RICHE","RIVEE","ROBOT","ROCHE","ROUGE","ROULE","ROUTE","RUGBY",
-  "SALLE","SALON","SAUCE","SAUTE","SAVON","SCENE","SELON","SERIE","SERRE","SIEGE","SIGNE","SILOS","SINGE","SLOPE","SOLDE","SOMME","SONDE","SORTE","SOUDE","SUEUR",
-  "SUITE","TABLE","TALON","TARDE","TASSE","TEMPS","TENIR","TERRE","TIERS","TIRER","TITRE","TRAME","TRIER","TROIS","TUNER","TYPER","UNITE","USAGE","USINE","VASTE",
-  "VENTE","VERRE","VESTE","VIEUX","VILLE","VIRUS","VISER","VITAL","VIVRE","VOILE","VOLEE","VOTER","VOYOU","ZEBRE",
+  'ABORD','ACTIF','AIMER','ALBUM','ARBRE','BALAI','BLANC','BOULE','BRUIT','CADRE',
+  'CARTE','CHAUD','CHIEN','CHOSE','COEUR','DANSE','DEBUT','DOIGT','DOUTE','ECRAN',
+  'ECOLE','ENFER','EPAIS','ETUDE','FAIRE','FLEUR','FROID','FRUIT','GARDE','GENRE',
+  'GLACE','GRAIN','GRAND','GUIDE','HABIT','HERBE','HOTEL','HUILE','IDEAL','IMAGE',
+  'INDEX','JAUNE','JOUER','LARGE','LIVRE','MAINS','MAJOR','MARIN','MATCH','MATIN',
+  'METAL','METRE','MONDE','NAVAL','NEIGE','NOEUD','OCEAN','ODEUR','OPERA','ORAGE',
+  'PAIRE','PARIS','PARLE','PASSE','PETIT','PHARE','PIANO','PLACE','PLUME','POINT',
+  'POIRE','POMME','PORTE','PRISE','PROIE','QUART','RADAR','RAIDE','REGLE','ROBOT',
+  'ROUGE','ROUTE','SALON','SCENE','SERIE','SIEGE','SIGNE','SINGE','SOLDE','SONDE',
+  'TABLE','TARDE','TEMPS','TERRE','TITRE','TRIER','TROIS','UNITE','USAGE','VENTE',
+  'VERRE','VESTE','VILLE','VOILE','VOTER','ZEBRE'
+];
 
-  "ABATS","ABIME","ACCES","ACIDE","ACIER","ACTES","AIDES","AIGUE","AILES","AIRES",
-  "ALIAS","ALINE","ALITE","ALOES","AMENE","AMIES","ANGES","ANODE","ANSES","APLAT",
-  "ARETE","ARMEE","AROME","ATLAS","AURAS","AVALS","AVANT","AVERE","AVISE","AVOUE",
-  "BACHE","BAGUE","BAIES","BAINS","BAISE","BALAY","BALLE","BARGE","BASSE","BASTA",
-  "BATIS","BEAUX","BECHE","BENIR","BETES","BIENS","BILLE","BLAME","BLASE","BLEME",
-  "BLUES","BOCAL","BOEUF","BOGUE","BOISE","BONDS","BORNE","BOSSE","BOTTE","BOYAU",
-  "BRAVE","BRINS","BRODE","BROIE","BRUME","BUCHE","BUVEE","CABAN","CABRE","CADET",
-  "CAGES","CALER","CALOT","CANOE","CAPTE","CARIE","CARNE","CASES","CAVES","CEDER",
-  "CELUI","CENTS","CERNE","CESSE","CHAPE","CHOCS","CHUTE","CIDRE","CIRER","CLAME",
-  "CLASH","CLOSE","CLOUE","COGNE","COLIN","COMMA","COMTE","COPIE","CORDE","CORNE",
-  "COURS","COUPE","COURE","COURS","CRAIN","CREDO","CREER","CRESS","CREUX","CRIER",
-  "CRUES","CUBES","CUIRE","CULOT","DARDS","DATES","DEBIT","DEGEL","DEMIT","DENSE",
-  "DEPOT","DESIR","DEVIN","DIGNE","DINER","DOCKS","DODUE","DOGME","DOREE","DOUCE",
-  "DRAGS","DRAME","DROPS","DUNES","ECRIN","ECRUE","EGALE","ELANS","ELIRE","EMAIL",
-  "EMOIS","ENCRE","ENFUI","ENTRE","ENVIE","EPAIS","EPIER","EPOUX","EQUER","ETATS",
-  "ETRES","EXIGE","FABLE","FADES","FAGOT","FANAL","FARCE","FARES","FATRE","FENDE",
-  "FERAI","FERAS","FERES","FETES","FIBRE","FIEFS","FIGEE","FILER","FIONS","FLOTS",
-  "FOIRE","FONDE","FORCE","FOURS","FRAIS","FRENE","FROLE","FUGUE","FUMER","GACHE",
-  "GAGNE","GAITE","GANTS","GARER","GATER","GAULE","GAVER","GENOU","GICLE","GIRLS",
-  "GIVRE","GLACE","GLANE","GONDS","GORGE","GOUGE","GOUTS","GRADE","GRAIS","GRAVE",
-  "GRELE","GRIME","GUERE","HACHE","HANTE","HARDI","HAVRE","HEROS","HOCHE","HOTTE",
-  "HURLA","ICONE","ILETS","INNEE","ISERE","ISSUE","JASER","JETEE","JETER","JOLIE",
-  "JOUET","JUBEE","JUGER","JURER","LACER","LAIDE","LAINE","LANCE","LARME","LAVER",
-  "LEGUE","LENTS","LIEGE","LIEUX","LIGUE","LIMES","LINCE","LISSE","LITEE","LOGIS",
-  "LORIS","LUTTE","MACHE","MAGOT","MAINS","MALUS","MANIE","MARCS","MARES","MARGE",
-  "MATER","MELER","MENES","MERES","MEUTE","MIEUX","MIRER","MIXER","MODES","MOTUS",
-  "MURES","NAIFS","NANAS","NARRE","NATIF","NAVRE","NEANT","NEEES","NERVI","NICHES",
-  "NOUER","NUITS","OBEIR","OBJET","OCRES","ODEUR","OISEE","OLIVE","OMBRE","ONCES",
-  "OPERE","OPIUM","ORAGE","ORGUE","OSIER","OTAGE","OUATE","OUEDS","OUIES","OURES",
-  "PAIEN","PAINS","PALIR","PAPES","PARER","PARIS","PATES","PAVES","PEAGE","PEINE",
-  "PELER","PENSE","PERLE","PEURS","PHASE","PIECE","PIEDS","PIGER","PILER","PINTE",
-  "PIVOT","PLAIS","PLANE","PLEUR","POCHE","POELE","POILS","POING","POIRE","POLIR",
-  "POMME","PORTS","POSEE","POTEE","POULE","POURS","PRIME","PRIVE","PROBE","PROSE",
-  "PUCES","PUNIR","QUAIS","QUASI","QUOTA","RABOT","RADIS","RAGES","RAMES","RANGE",
-  "RARES","RATER","RAVIN","RAYER","RECIF","REFUS","REGIS","RENDS","RENIE","REPLI",
-  "RINCE","RISER","RITES","RODES","ROMPS","RONDE","ROSSE","ROUES","RUINE","SABLE",
-  "SAINS","SALIR","SALVE","SATIN","SAUTE","SAVON","SCIER","SCOPE","SELLE","SERAI",
-  "SERES","SIEGE","SIGLE","SINUE","SKATE","SOEUR","SOLDE","SONDE","SONGE","SORTI",
-  "SOUDR","SOYEZ","SUAVE","SUBIR","SUEES","SUEUR","SUIVI","TACHE","TAIES","TARIR",
-  "TAXER","TENDE","TIGRE","TIRET","TISSU","TOILE","TOMBE","TORSE","TOURS","TRAME",
-  "TRIER","TROUE","TUEES","TURBO","UNION","USUEL","VACHE","VAGUE","VALET","VALSE",
-  "VEINE","VENIR","VERBE","VERNI","VIBRE","VIDER","VIEIL","VIGNE","VILES","VIRER",
-  "VISSE","VIVAT","VOICI","VOLER","VOTES","VOUEE","ZONES",
-  "ABRUS","ACARI","ACCOT","ACONE","ACRUS","ADENT","ADRET","AEGIR","AERES","AERER",
-  "AFFIN","AGAME","AGAVE","AGILE","AGIOS","AGORA","AIGRE","AIMER","AINES","AIREL",
-  "AJURA","ALENE","ALENT","ALESE","ALODI","ALUNE","AMBLE","AMONT","AMULE","ANCRE",
-  "ANGON","ANIMA","ANION","ANISE","ANITE","AORTE","APICS","APODE","APPAT","ARASE",
-  "ARDUE","ARECS","ARGON","ARIAS","ARIDE","ARISE","ARRET","ARUME","ASPRE","ASTRE",
-  "ATONE","AUBES","AURES","AVERS","AVIDE","AXIAL","AZURS","BACLE","BADET","BAGNE",
-  "BAISE","BAJOU","BALTE","BANCQ","BARDI","BARGE","BASIN","BATAI","BATTE","BAUDE",
-  "BAVES","BEANT","BEGUE","BENET","BERET","BIDON","BILOT","BISON","BITON","BLAIS",
-  "BLATI","BLAZE","BLETS","BLINI","BODIN","BOGIE","BOLEE","BORAX","BOSON","BOUCS",
-  "BOUET","BOUFI","BOULE","BOURI","BOUTS","BRAVA","BRIDA","BRINS","BROCS","BRONS",
-  "BRUTA","BUCHU","BUGLE","BULBE","BUREE","CABLA","CABRE","CADIS","CAIDS","CALIN",
-  "CALUS","CAMUS","CANIF","CAPOT","CARAT","CARON","CASUS","CAVET","CEGNE","CELLE",
-  "CENDE","CENSE","CERAT","CESAR","CHAPE","CHAUX","CHEFS","CHIPS","CHOPE","CHUTA",
-  "CINQS","CIRCU","CIRRE","CIVET","CLAME","CLODO","CLOPE","COBOL","COGON","COLZA",
-  "COMAS","CONGA","COPAL","CORPS","COSSE","COTIR","COUAC","COUPE","COURS","CRACK",
-  "CRANS","CRAZE","CREDI","CREPU","CROCS","CRUES","CUIRA","CULEX","CURIE","CYCLE",
-  "DAINS","DALLE","DARNE","DEGUE","DELOS","DEMIS","DENIM","DERBY","DEUIL","DEVIN",
-  "DIENE","DILUE","DINGO","DIRLO","DODUS","DOGUE","DOIGT","DOLER","DOMES","DONUT",
-  "DOPEE","DOREE","DORIS","DOUAR","DOUCI","DRAIN","DRAPE","DROGU","DUNKS","DUPER",
-  "EBAHI","EBENE","ECIME","ECRIT","ECRUE","EGALE","EIDER","ELAVE","ELUDE","EMOIS",
-  "ENCRE","ENFIN","ENLIE","ENRIE","ENTRE","ENVIE","EPATE","EPAVE","EPEES","EPIER",
-  "EPOUX","ERBUE","ERIGE","ETANG","ETIOL","ETUVE","EXACT","EXILE","EXTRA","FABLE",
-  "FADES","FALOT","FANON","FARAD","FAUNE","FELIN","FENDS","FERAL","FETUS","FIANT",
-  "FIBRE","FIEFS","FIOLE","FIRME","FJORD","FLAIR","FLANC","FLAPI","FLUTE","FOCUS",
-  "FOLIE","FONDU","FORAI","FORCE","FOUET","FRIMA","FRIME","FUGUE","FUMET","FUSEE",
-  "GABLE","GAINS","GAMIN","GAROU","GATEE","GAZEE","GELIF","GENES","GEOLE","GIRIE",
-  "GIRLS","GLAND","GLOBE","GNOLE","GOLEM","GOMME","GONDE","GOURD","GRACE","GRAND",
-  "GRECE","GROIN","GROIN","GUANO","GUERI","HABLE","HAREM","HAVIE","HENNE","HERON",
-  "HIEES","HOCOS","HOUER","HUMER","HURLA","ICARE","ILETS","IMBUE","INNUE","IRISE",
-  "ISARD","ISSUS","IVRES","JABLE","JADES","JALON","JARRE","JASER","JAVEL","JODIE",
-  "JOLIS","JOUAL","JOUER","JUDAS","JUGEE","JUMEL","KAPPA","KEFIR","KIOSK","KORAN",
-  "LABEL","LACER","LAGON","LAICS","LARDE","LASSO","LATER","LAVER","LEUDE","LIARD",
-  "LIGOT","LILAS","LIMON","LINCE","LIPPE","LISER","LITEE","LOGIS","LORIS","LOUVE",
-  "LUCES","LUGES","LUNDI","LUTIN","MACHE","MAGOT","MAJOR","MALIN","MANDE","MARIE",
-  "MARNI","MELON","MERLE","METIS","MIEUX","MINCE","MOERE","MOINE","MOLLA","MORSE",
-  "MOTET","MOUES","MUCUS","MURIE","NAIFS","NARRE","NAVET","NEFLE","NEIGE","NENNI",
-  "NIAIS","NOBLE","NOEUD","NOIRE","NOMME","NUAGE","OASIS","OBESE","OBIER","OCEAN",
-  "ODEUR","OISEE","OLIVE","OMBRE","ONCES","OPALE","OPERA","ORAGE","ORGUE","OSIER",
-  "OTAGE","OUATE","OURLA","OUTIL","OUVRE","PACHA","PAIEN","PAIRE","PALIS","PANSE",
-  "PARER","PATIN","PAVOT","PEAUX","PELLE","PERDU","PERIL","PESTE","PHARE","PIEGE",
-  "PILOT","PINCE","PIQUE","PLAIS","PLIER","PLOMB","PLUME","POELE","POIDS","POINT",
-  "POLIR","PORTE","POTIN","POULE","PREUX","PRIME","PRION","PROBE","PROIE","PRUDE",
-  "PUCES","PUNIR","QUAIS","QUART","QUASI","QUOTA","RABOT","RADIS","RAIDE","RAMEE",
-  "RANCE","RANGE","RATER","RAYON","RECIF","REGIS","REINE","RELAX","REMUE","RENDS",
-  "RENIE","REPLI","RINCE","RITES","RIVEE","ROBOT","RODES","RONDE","ROSSE","ROUES",
-  "RUGIR","RUINE","SABLE","SABRE","SAINS","SALIR","SALVE","SATIN","SAUTE","SAVON",
-  "SCIER","SCOPE","SELLE","SERAI","SIEGE","SIGLE","SINUE","SKATE","SOEUR","SOLDE",
-  "SONDE","SONGE","SORTI","SOUDR","SUAVE","SUBIR","SUEUR","SUIVI","TACHE","TAIES",
-  "TARIR","TAXER","TENDE","TIGRE","TIRET","TISSU","TOILE","TOMBE","TORSE","TOURS",
-  "TRAME","TRIER","TROUE","TURBO","UNION","USUEL","VACHE","VAGUE","VALET","VALSE",
-  "VEINE","VENIR","VERBE","VERNI","VIBRE","VIDER","VIGNE","VILES","VIRER","VISSE",
-  "VIVAT","VOICI","VOLER","VOTES","ZONES",
-  "ABIME","ABOIS","ABRIE","ACANT","ACERE","ACIER","ACONE","ACORE","ACRUE","ACTEE",
-  "ADIEU","ADRET","AFFIN","AGAPE","AGILE","AGIOS","AIGRE","AIMER","AINES","AIRES",
-  "ALENE","ALIAS","ALOES","AMBLE","AMONT","AMPLE","ANCRE","ANGON","ANIMA","ANION",
-  "AORTE","APODE","APPAT","ARASE","ARDUE","ARGON","ARIAS","ARIDE","ARRET","ASPRE",
-  "ASTRE","ATONE","AUBES","AURES","AVERS","AVIDE","AXIAL","AZURS","BACLE","BADET",
-  "BAGNE","BAISE","BAJOU","BALTE","BANCQ","BARDI","BASIN","BATTE","BAUDE","BAVES",
-  "BEANT","BEGUE","BENET","BERET","BIDON","BILOT","BISON","BITON","BLAIS","BLATI",
-  "BLAZE","BLETS","BLINI","BODIN","BOGIE","BOLEE","BORAX","BOSON","BOUCS","BOUET",
-  "BOUFI","BOURI","BRAVA","BRIDA","BROCS","BRONS","BRUTA","BUGLE","BULBE","BUREE",
-  "CABLA","CADIS","CAIDS","CALIN","CALUS","CAMUS","CANIF","CAPOT","CARAT","CARON",
-  "ABRAC","ABYME","ACCOU","ACRES","ACTES","AERIE","AFFRE","AGACE","AGENT","AGILE",
-  "AIGUS","AIMEE","AIXES","AJOUR","ALBUS","ALEAS","ALGUE","ALODS","AMERS","AMIDE",
-  "AMINE","AMPLE","ANCRA","ANIMA","AORTA","APNEE","ARBOR","ARENE","ARIDE","AROME",
-  "ASSEZ","ASTES","AUGES","AURES","AVENT","AVIDE","AXEES","AZOTE","BACON","BAIES",
-  "BALSA","BANJO","BARIL","BAYER","BECOT","BELER","BENIS","BERCE","BICHE","BIDES",
-  "BILOT","BIOME","BISOU","BLIND","BLUFF","BOCAL","BOERS","BOITE","BOLUS","BONUS",
-  "BORDE","BOUTS","BRAVO","BRISA","BROYA","BUCHE","BUVEZ","CABOT","CABLE","CADRE",
-  "CALOT","CAMER","CANER","CAPRE","CARIE","CARPE","CAVEE","CEDRE","CELAS","CENTS",
-  "CERFS","CHICS","CHOUX","CIBLA","CIMES","CIRER","CITES","CIVIL","CLOUS","COBES",
-  "COEUR","COLIS","COMBI","CONGA","COPTE","COTER","CRACK","CRASE","CRENA","CRIES",
-  "CUBER","CUEVA","CUMUL","DARDS","DATIF","DECAN","DELTA","DENSE","DEPOT","DEVIS",
-  "DIETE","DIODE","DIXIE","DODUE","DORER","DROIT","DUNES","ECRUS","EGAUX","ELANS",
-  "ELITE","EMERI","EPAIS","EPEES","EPICE","EPUIS","ERIGE","ESQUI","ETIRE","ETUIS",
-  "EXILS","FABLE","FACON","FANER","FATRA","FAUNE","FECAL","FEMUR","FERIA","FICUS",
-  "FIOLE","FIXER","FLAIR","FLANC","FLEAU","FLORE","FONTE","FRAIS","FRIME","FROCS",
-  "FURIE","GAGER","GAMIN","GARER","GATER","GENOU","GICLE","GIRON","GLAND","GOMME",
-  "GRAAL","GRAIN","GRAND","GRIOT","GUANO","HABLE","HANTE","HAREM","HENNE","HERON",
-  "HOBBY","HOULE","HUMER","ICONE","IGLOO","ILETS","IMAGO","IMBUE","INNES","IRISE",
-  "ISARD","ISSUE","JACEE","JADES","JARRE","JETON","JODIE","JOUAL","JOUER","JUDAS",
-  "JUMBO","KAPPA","KEFIR","KIOSK","KORAN","LABEL","LACER","LAGON","LARDE","LASER",
-  "LAVER","LEUDE","LIARD","LILAS","LIPPE","LISER","LITEE","LOGIS","LOUPE","LUTIN",
-  "MAGOT","MAJOR","MALIN","MANGO","MARIE","MELON","MERLE","METIS","MINCE","MOERE",
-  "MOINE","MOLLA","MORSE","MOTET","MOUES","MUCUS","MURIE","NAVET","NEIGE","NENNI",
-  "NIAIS","NOBLE","NOEUD","NOMME","NUAGE","OASIS","OBESE","OCEAN","ODEUR","OLIVE",
-  "OMBRE","OPALE","OPERA","ORAGE","ORGUE","OSIER","OTAGE","OUATE","OUTIL","OUVRE",
-  "PACHA","PAIRE","PALIS","PANSE","PARER","PATIN","PAVOT","PELLE","PERDU","PHARE",
-  "PIEGE","PILOT","PINCE","PIQUE","PLIER","PLOMB","PLUME","POELE","POIDS","POINT",
-  "POLIR","PORTE","POTIN","POULE","PREUX","PRIME","PROBE","PROIE","PRUDE","QUAIS",
-  "QUART","QUASI","QUOTA","RADIS","RAIDE","RANCE","RANGE","RAYON","RECIF","RELAX",
-  "REMUE","RENDS","REPLI","RINCE","RITES","ROBOT","RONDE","ROSSE","ROUES","RUGIR",
-  "RUINE","SABRE","SAINS","SALIR","SALVE","SATIN","SCIER","SCOPE","SELLE","SIEGE",
-  "SIGLE","SINUE","SKATE","SOEUR","SOLDE","SONDE","SONGE","SORTI","SUAVE","SUBIR",
-  "SUEUR","SUIVI","TACHE","TAIES","TARIR","TAXER","TENDE","TIGRE","TIRET","TISSU",
-  "TOILE","TOMBE","TORSE","TOURS","TRAME","TRIER","TROUE","TURBO","UNION","USUEL",
-  "VACHE","VAGUE","VALET","VALSE","VEINE","VENIR","VERBE","VERNI","VIBRE","VIDER",
-  "VIGNE","VILES","VIRER","VISSE","VIVAT","VOICI","VOLER","VOTES","ZONES"
-\];
+const WORDS_6 = [
+  'ABIMER','ABORDS','ABSENT','ACCORD','ACTION','ADOPTE','ADRESSE','AFFAIRE','AGENCE','AGENDA',
+  'ALERTE','AMENER','AMICAL','ANCIEN','ANIMER','ANNUEL','APERCU','ARBRES','ARGENT','ARRETE',
+  'ARRIVE','ASPECT','ASSURE','ATTAQUE','AUTEUR','AUTOUR','AVANCE','AVISER','BAGAGE','BALCON',
+  'BANQUE','BATEAU','BEAUTE','BESOIN','BILLET','BLAGUE','BLASON','BLOQUE','BOUTON','BRILLE',
+  'BRIQUE','BUREAU','CABINE','CADEAU','CAMION','CANARD','CAPTER','CARBON','CARNET','CASQUE',
+  'CENTRE','CERISE','CHAINE','CHAISE','CHANGE','CHANTE','CHARGE','CHASSE','CHEMIN','CHERIR',
+  'CHOISI','CIMENT','CITRON','CLASSE','CLIENT','CLIQUE','COFFRE','COINCE','COLLER','COMBAT',
+  'COMMUN','CONCER','CONFIE','CONTRE','COPIER','CORDES','CORNES','COUPER','COURIR','COUSIN',
+  'CREMES','CROIRE','CROISE','DANGER','DANSER','DECIDE','DEFEND','DELAIS','DEMAND','DENIER',
+  'DESERT','DESIRE','DETEND','DEVANT','DEVOIR','DIGNES','DINERS','DOIGTS','DOUCES','DOUTER',
+  'DRESSE','DROITS','DURCIR','ECHANGE','ECHECS','ECLAIR','ECRIRE','EDITER','EFFACE','EGLISE',
+  'ELARGI','ELEVES','EMPLOI','ENFANT','ENJEUX','ENVOYE','EQUIPE','ERRANT','ESPACE','ESSAIS',
+  'ETAGES','ETUDES','EXACTE','EXPOSE','FAIBLE','FAMINE','FAUTES','FEMMES','FERMER','FICHES',
+  'FIGURE','FILTRE','FINALE','FLEURS','FORMER','FORCES','FOURNI','FRANCS','FRUITS','GAGNER',
+  'GARANT','GARCON','GENTIL','GESTES','GLOIRE','GOUTER','GRANDS','GROUPE','GUIDER','HABITS',
+  'HERBES','HUMAINS','IMAGES','IMPACT','IMPOTS','INVITE','JARDIN','JETONS','JOINTS','JUNGLE',
+  'LACHER','LANCES','LARGES','LECONS','LECTUR','LENTES','LEVERS','LIBERE','LIGNES','LIMITI',
+  'LOGEES','LUMIER','MACHER','MAIGRE','MAISON','MANIER','MARQUE','MELANGE','MENTAL','MERITE',
+  'METTRE','MILIEU','MINUTE','MIRAGE','MODELE','MOMENT','MONDES','MONTER','MORALE','MOTEUR',
+  'MOURIR','MUSCLE','NAITRE','NATION','NATURE','NEIGES','NIVEAU','NOMBRE','NORMES','NOTION',
+  'NOUVEL','NUAGES','OBLIGE','OBTENU','OCEANS','OCCUPE','OFFERT','OFFICE','OPPOSE','ORDRES',
+  'ORGANE','OUVERT','PALIER','PANIER','PARTIE','PASSER','PENSER','PERDRE','PERILS','PERSIL',
+  'PETITS','PIECES','PILOTE','PLACER','PLAGES','POINTS','PORTER','POSTER','POULET','POURRA',
+  'PRENDS','PRINCE','PROJET','PROMET','PROPRE','PROUVE','PUNITS','QUARTS','QUETES','RACINE',
+  'RAPIDE','RAYONS','REAGIR','RECITS','REFUSE','REGLES','REJOUE','RELIEF','REMPLI','RENARD',
+  'RENDRE','RETOUR','REVEIL','RICHES','RIVAGE','ROCHES','ROULER','ROUTES','SACHET','SAISIE',
+  'SALLES','SAVOIR','SCENES','SEANCE','SECHER','SENIOR','SERVIR','SIGNAL','SIMPLE','SINGES',
+  'SOLIDE','SONNER','SORTIE','SOUDER','SOURIS','STABLE','SUITES','TABLES','TALENT','TARDER',
+  'TEMOIN','TENANT','TENUES','TERRES','TIRAGE','TISSUS','TOMBER','TRACES','TRAINS','TROUVE',
+  'TUNNEL','UNIQUE','UNITES','USAGES','USINES','UTILIS','VAGUES','VALEUR','VENDRE','VENTES',
+  'VERITE','VESTES','VIGNES','VILLES','VISAGE','VITALE','VIVANT','VOILES','VOISIN','VOYAGE'
+];
 
-// ===== Nettoyage automatique des dictionnaires (suppression des doublons, accents, longueurs invalides) =====
+// ---------- Nettoyage automatique ----------
 function cleanWords(list, length){
   return [...new Set(
     list
-      .map(w => w.normalize('NFD').replace(/[\u0300-\u036f]/g, ''))
+      .map(w => String(w).normalize('NFD').replace(/[\u0300-\u036f]/g, ''))
       .map(w => w.toUpperCase().trim())
       .filter(w => w.length === length)
   )];
 }
 
-// Versions propres utilisées par le jeu
 let WORDS_5_CLEAN = cleanWords(WORDS_5, 5);
-// Sécurité : si pour une raison quelconque la liste propre est vide, on retombe sur la liste brute
-if(!WORDS_5_CLEAN || WORDS_5_CLEAN.length === 0){
-  console.warn('WORDS_5_CLEAN vide, utilisation de WORDS_5 brut');
-  WORDS_5_CLEAN = WORDS_5;
-}
-
-const WORDS_6 = [
-  "ABIMER","ABORDS","ABRIER","ABSENT","ACCORD","ACHATS","ACTION","ADIEUX","ADOPTE","ADRESSE","AFFAIRE","AFFUTE","AGENCE","AGENDA","AGITER","AGREER","AIGLES","AILEES","AJOUTE","ALERTE",
-  "ALIGNE","ALLIEE","ALOURS","ALPINE","AMENER","AMICAL","AMOURS","ANALYS","ANCIEN","ANGEES","ANIMER","ANNUEL","ANNULE","APERCU","APPELS","APPUIS","ARBRES","ARCHEE","ARGENT","ARMEES",
-  "ARRETE","ARRIVE","ARTIST","ASPECT","ASSISE","ASSURE","ATTAQUE","ATTEIN","ATTEND","AUBERG","AUCUNE","AUGUST","AUTEUR","AUTOUR","AVANCE","AVISER","AVOUER","AVRILS","BAGAGE","BAIGNE",
-  "BALCON","BANDES","BANQUE","BARQUE","BATEAU","BATONS","BEAUTE","BESOIN","BILLET","BINALE","BIZARRE","BLAGUE","BLASON","BLEUES","BLOQUE","BOITER","BONJOU","BORDES","BOUTON","BRADER",
-  "BRANCH","BREBIS","BRETON","BRILLE","BRIQUE","BRUITS","BUREAU","CABINE","CADEAU","CALMER","CAMION","CAMPER","CANARD","CAPTER","CARACT","CARBON","CARNET","CARRES","CASQUE","CELLES",
-  "CENTRE","CERISE","CHAINE","CHAISE","CHAMPS","CHANGE","CHANTE","CHARGE","CHASSE","CHAUDS","CHEMIN","CHERIR","CHIFFR","CHOISI","CHROME","CIELER","CIMENT","CITRON","CLASSE","CLIENT",
-  "CLIQUE","CLOUER","COFFRE","COINCE","COLLER","COMBAT","COMBLE","COMITE","COMMUN","CONCER","CONDUI","CONFIE","CONGES","CONNAI","CONTRE","COPIER","CORDES","CORNES","COULES","COUPER",
-  "COURIR","COUSIN","CRANES","CREERF","CREMES","CRIEES","CROIRE","CROISE","CUISIN","DANGER","DANSER","DEBUTS","DECIDE","DEFEND","DELAIS","DEMAND","DENIER","DEPOTS","DESERT","DESIRE",
-  "DETEND","DEVANT","DEVENU","DEVOIR","DIGNES","DINERS","DOIGTS","DOUCES","DOUTER","DRAPEA","DRESSE","DROITS","DURCIR","ECHANGE","ECHECS","ECLAIR","ECOLES","ECRIRE","EDITER","EFFACE",
-  "EGALES","EGLISE","ELARGI","ELEVES","EMETRE","EMMENE","EMPIRE","EMPLOI","ENFANT","ENJEUX","ENNUIS","ENVOYE","EPAISS","EPARGN","EQUIPE","ERRANT","ESPACE","ESSAIS","ESSENT","ETAGES",
-  "ETALER","ETENDU","ETRANG","ETUDES","EXACTE","EXEMPT","EXPIRE","EXPOSE","FABRIC","FAIBLE","FAIRET","FAMINE","FATIGU","FAUTES","FEMMES","FERMER","FICHES","FIERES","FIGURE","FILTRE",
-  "FINALE","FLEURS","FOIRES","FONCER","FONDEE","FORMER","FORCES","FOURNI","FRANCS","FRISEE","FRONDE","FRUITS","FUMIER","GAGNER","GARANT","GARCON","GAZONS","GELURE","GENERA","GENRES",
-  "GENTIL","GERANT","GESTES","GLACER","GLOIRE","GOUTER","GRANDI","GRANDS","GRATTE","GROUPE","GUIDER","HABITS","HARDIS","HATEUR","HERBES","HISTOI","HONNEU","HORAIR","HUILES","HUMAINS",
-  "IMAGES","IMPACT","IMPOTS","INFORM","INSERE","INVITE","JARDIN","JAUNES","JETONS","JOINTS","JOURNE","JUDOKA","JUGERA","JUMELE","JUNGLE","KILOME","LACHER","LANCES","LAPINS","LARGES",
-  "LECONS","LECTUR","LENTES","LEVERS","LIBERE","LIGNES","LIMITI","LITIGE","LOGEES","LOINTE","LUMIER","LUNETT","MACHER","MAGNAT","MAIGRE","MAISON","MALINS","MANIER","MARQUE","MATEUR",
-  "MELANGE","MEMOIR","MENTAL","MERITE","MESSIE","METTRE","MILIEU","MINEUR","MINUTE","MIRAGE","MODELE","MOELLE","MOMENT","MONDES","MONTER","MORALE","MOTEUR","MOURIR","MUSCLE","NAITRE",
-  "NATION","NATURE","NEIGES","NERFSI","NETTOI","NIVEAU","NOMBRE","NORMES","NOTION","NOUVEL","NUAGES","OBLIGE","OBTENU","OCEANS","OCCUPE","OCTOBR","OFFERT","OFFICE","OPPOSE","ORDRES",
-  "ORGANE","OUVERT","PAIRES","PALIER","PANIER","PAROIS","PARTIE","PASSER","PAUSES","PENSER","PERDRE","PERILS","PERSIL","PETITS","PIECES","PILOTE","PIONNI","PLACER","PLAGES","PLUIES",
-  "POCHEE","POINTS","PORTER","POSTER","POULET","POURRA","PRATIQ","PRENDS","PRINCE","PROJET","PROMET","PROPRE","PROUVE","PUNITS","QUARTS","QUERIR","QUETES","RACINE","RAPIDE",
-  "RARETE","RASSUR","RAYONS","REAGIR","RECEVO","RECITS","RECHER","REFUSE","REGLES","REJOUE","RELIEF","REMPLI","RENARD","RENTEZ","RENDRE","RENOUV","REPLIS","RETOUR","REVEIL","RICHES",
-  "RIVAGE","ROBUST","ROCHES","ROULER","ROUTES","SACHET","SAISIE","SALLES","SAVOIR","SCENES","SEANCE","SECHER","SEMAIS","SENIOR","SERIEU","SERVIR","SIGNAL","SIMPLE","SINCER","SINGES",
-  "SOCIET","SOIGNE","SOLIDE","SONNER","SORTIE","SOUDER","SOUPER","SOURIS","STABLE","SUITES","SURGER","TABLES","TALENT","TARIFS","TARDER","TEINTS","TEMOIN","TENANT","TENUES","TERRES",
-  "TETESI","TIRAGE","TISSUS","TOMBER","TRACES","TRAINS","TRAVAI","TROUVE","TUNNEL","TYPAGE","UNIQUE","UNITES","USAGES","USINES","UTILIS","VAGUES","VALEUR","VANTES","VENDRE","VENTES",
-  "VERITE","VESTES","VICTOI","VIEILL","VIGNES","VILLES","VISAGE","VITALE","VIVANT","VOILES","VOISIN","VOYAGE","WAGONS","YOGOUR","ZONESZ"
-\];
-
-// Finalisation du nettoyage pour les mots de 6 lettres
 let WORDS_6_CLEAN = cleanWords(WORDS_6, 6);
-// Sécurité : si pour une raison quelconque la liste propre est vide, on retombe sur la liste brute
-if(!WORDS_6_CLEAN || WORDS_6_CLEAN.length === 0){
-  console.warn('WORDS_6_CLEAN vide, utilisation de WORDS_6 brut');
-  WORDS_6_CLEAN = WORDS_6;
-}
 
-let solution = "";
+// Tests automatiques sur les dictionnaires
+assert(WORDS_5_CLEAN.length > 0, 'WORDS_5_CLEAN non vide');
+assert(WORDS_6_CLEAN.length > 0, 'WORDS_6_CLEAN non vide');
+assert(WORDS_5_CLEAN.every(w => /^[A-Z]{5}$/.test(w)), 'Tous les mots 5 lettres valides');
+assert(WORDS_6_CLEAN.every(w => /^[A-Z]{6}$/.test(w)), 'Tous les mots 6 lettres valides');
+
+// ---------- Etat du jeu ----------
+let solution = '';
 let difficulty = 'normal';
 let wordLength = 5;
 let board = [];
 let row = 0, col = 0, gameOver = false;
 
-const boardWrap = document.getElementById("boardWrap");
-const keyboard = document.getElementById("keyboard");
-const kbd = document.getElementById("kbd-capture");
+const boardWrap = document.getElementById('boardWrap');
+const keyboard = document.getElementById('keyboard');
 
 function startGame(){
   const mode = document.getElementById('modeSelect');
-  wordLength = parseInt(mode.value);
+  wordLength = parseInt(mode.value, 10);
   const list = wordLength === 5 ? WORDS_5_CLEAN : WORDS_6_CLEAN;
   solution = list[Math.floor(Math.random()*list.length)];
-  board = Array.from({length:6}, ()=> Array(wordLength).fill(""));
+  board = Array.from({length:6}, ()=> Array(wordLength).fill(''));
   row = 0; col = 0; gameOver = false;
   renderBoard();
   renderKeyboard();
   selectTile(0,0);
 }
 
-const modeSelect = document.getElementById('modeSelect');
-const difficultySelect = document.getElementById('difficultySelect');
-modeSelect.addEventListener('change', startGame);
-difficultySelect.addEventListener('change', ()=>{
-  difficulty = difficultySelect.value;
-});
-
-
+// ---------- Rendu ----------
 function renderBoard(){
-  boardWrap.innerHTML = "";
-  const b = document.createElement("div"); b.className = "board";
+  boardWrap.innerHTML = '';
+  const b = document.createElement('div'); b.className = 'board';
   for(let r=0;r<6;r++){
-    const line = document.createElement("div"); line.className = "row";
+    const line = document.createElement('div'); line.className = 'row';
     for(let c=0;c<wordLength;c++){
-      const t = document.createElement("div");
-      t.className = "tile";
+      const t = document.createElement('div');
+      t.className = 'tile';
       t.id = `tile-${r}-${c}`;
       t.onclick = () => selectTile(r,c);
       line.appendChild(t);
@@ -476,135 +291,103 @@ function renderBoard(){
   boardWrap.appendChild(b);
 }
 
-const KB = ["AZERTYUIOP","QSDFGHJKLM","WXCVBN"];
+const KB = ['AZERTYUIOP','QSDFGHJKLM','WXCVBN'];
 function renderKeyboard(){
-  keyboard.innerHTML = "";
+  keyboard.innerHTML = '';
   KB.forEach(r=>{
-    const rowDiv = document.createElement("div"); rowDiv.className = "kb-row";
+    const rowDiv = document.createElement('div'); rowDiv.className = 'kb-row';
     [...r].forEach(ch=>{
-      const k = document.createElement("div"); k.className = "key"; k.textContent = ch;
+      const k = document.createElement('div'); k.className = 'key'; k.textContent = ch;
       k.onclick = () => handleKey(ch);
       rowDiv.appendChild(k);
     });
     keyboard.appendChild(rowDiv);
   });
-  const act = document.createElement("div"); act.className = "kb-row";
-  const enter = document.createElement("div"); enter.className = "key wide"; enter.textContent = "Entrer"; enter.onclick = onEnter;
-  const back = document.createElement("div"); back.className = "key wide"; back.textContent = "Suppr"; back.onclick = onBack;
+  const act = document.createElement('div'); act.className = 'kb-row';
+  const enter = document.createElement('div'); enter.className = 'key wide'; enter.textContent = 'Entrer'; enter.onclick = onEnter;
+  const back = document.createElement('div'); back.className = 'key wide'; back.textContent = 'Suppr'; back.onclick = onBack;
   act.appendChild(enter); act.appendChild(back);
   keyboard.appendChild(act);
 }
 
+// ---------- Entrées ----------
 function handleKey(letter){
-  soundTap();
-  const tileEl = document.getElementById(`tile-${row}-${col}`);
-  if(tileEl){ tileEl.classList.remove('pop'); void tileEl.offsetWidth; tileEl.classList.add('pop'); }
-
-  soundTap();
   if(gameOver) return;
+  soundTap();
   if(col < wordLength){
     board[row][col] = letter;
-    document.getElementById(`tile-${row}-${col}`).textContent = letter;
+    const tile = document.getElementById(`tile-${row}-${col}`);
+    tile.textContent = letter;
+    tile.classList.remove('pop'); void tile.offsetWidth; tile.classList.add('pop');
     if(col < wordLength-1) selectTile(row, col+1);
   }
 }
 
 function onBack(){
-  soundTap();
   if(gameOver) return;
+  soundTap();
   if(col > 0) col--;
-  board[row][col] = "";
-  document.getElementById(`tile-${row}-${col}`).textContent = "";
+  board[row][col] = '';
+  const tile = document.getElementById(`tile-${row}-${col}`);
+  tile.textContent = '';
   selectTile(row,col);
 }
 
 function onEnter(){
+  if(gameOver) return;
   soundEnter();
   const rowEl = document.querySelectorAll('.row')[row];
-  if(gameOver) return;
 
-  // Vérification mode difficile (Hard mode)
-  if(difficulty === 'hard' && row > 0){
-    const prevRow = board[row-1];
-    const currentGuess = board[row];
-
-    // Lettres vertes doivent rester à la même position
-    for(let i=0;i<wordLength;i++){
-      const prevTile = document.getElementById(`tile-${row-1}-${i}`);
-      if(prevTile.style.background === 'var(--green)'){
-        if(currentGuess[i] !== prevRow[i]){
-          if(rowEl){ rowEl.classList.remove('shake'); void rowEl.offsetWidth; rowEl.classList.add('shake'); }
-          return;
-        }
-      }
-    }
-
-    // Lettres jaunes doivent être réutilisées
-    for(let i=0;i<wordLength;i++){
-      const prevTile = document.getElementById(`tile-${row-1}-${i}`);
-      if(prevTile.style.background === 'var(--yellow)'){
-        if(!currentGuess.includes(prevRow[i])){
-          if(rowEl){ rowEl.classList.remove('shake'); void rowEl.offsetWidth; rowEl.classList.add('shake'); }
-          return;
-        }
-      }
-    }
-  }
-
-  if(board[row].includes("")){
-    if(rowEl){ rowEl.classList.remove('shake'); void rowEl.offsetWidth; rowEl.classList.add('shake'); }
+  if(board[row].includes('')){
+    rowEl.classList.remove('shake'); void rowEl.offsetWidth; rowEl.classList.add('shake');
     return;
   }
 
   revealRow();
 
-  if(board[row].join("") === solution){
+  if(board[row].join('') === solution){
     const boardEl = document.querySelector('.board');
-    if(boardEl){
-      boardEl.classList.add('win-shake');
-      setTimeout(()=>{
-        boardEl.classList.remove('win-shake');
-        boardEl.classList.add('win-bounce');
-        setTimeout(()=>boardEl.classList.remove('win-bounce'),900);
-      },650);
-    }
+    boardEl.classList.add('win-shake');
+    setTimeout(()=>{
+      boardEl.classList.remove('win-shake');
+      boardEl.classList.add('win-bounce');
+      setTimeout(()=>boardEl.classList.remove('win-bounce'),900);
+    },650);
     soundWin();
-    showModal("Bravo !", "Mot trouvé : " + solution);
+    showModal('Bravo !', 'Mot trouvé : ' + solution);
     gameOver = true; return;
   }
 
   row++; col = 0;
   if(row >= 6){
     soundLose();
-    showModal("Perdu", "Mot : " + solution);
+    showModal('Perdu', 'Mot : ' + solution);
     gameOver = true; return;
   }
   selectTile(row,0);
 }
 
-
 function revealRow(){
-  const rowEl = document.querySelectorAll('.row')[row];
-  const guess = board[row].join("");
-  const sol = [...solution];
-  const res = Array(wordLength).fill("gray");
+  const guess = board[row].join('');
+  const sol = solution.split('');
+  const res = Array(wordLength).fill('gray');
 
   for(let i=0;i<wordLength;i++){
-    if(guess[i] === sol[i]){ res[i] = "green"; sol[i] = null; }
+    if(guess[i] === sol[i]){ res[i] = 'green'; sol[i] = null; }
   }
   for(let i=0;i<wordLength;i++){
-    if(res[i] === "gray"){
+    if(res[i] === 'gray'){
       const idx = sol.indexOf(guess[i]);
-      if(idx !== -1){ res[i] = "yellow"; sol[idx] = null; }
+      if(idx !== -1){ res[i] = 'yellow'; sol[idx] = null; }
     }
   }
 
   for(let i=0;i<wordLength;i++){
     const t = document.getElementById(`tile-${row}-${i}`);
     t.classList.remove('reveal'); void t.offsetWidth; t.classList.add('reveal');
-    if(res[i] === "green") t.style.background = "var(--green)";
-    else if(res[i] === "yellow") t.style.background = "var(--yellow)";
-    else t.style.background = "var(--gray)";
+    if(res[i] === 'green') t.style.background = 'var(--green)';
+    else if(res[i] === 'yellow') t.style.background = 'var(--yellow)';
+    else t.style.background = 'var(--gray)';
   }
   updateKeyboard(guess, res);
 }
@@ -614,9 +397,9 @@ function updateKeyboard(guess, res){
     const letter = guess[i];
     const keys = [...document.querySelectorAll('.key')].filter(k=>k.textContent === letter);
     keys.forEach(k=>{
-      if(res[i] === "green") k.className = "key green";
-      else if(res[i] === "yellow" && !k.classList.contains("green")) k.className = "key yellow";
-      else if(res[i] === "gray") k.className = "key dark";
+      if(res[i] === 'green') k.className = 'key green';
+      else if(res[i] === 'yellow' && !k.classList.contains('green')) k.className = 'key yellow';
+      else if(res[i] === 'gray') k.className = 'key dark';
     });
   }
 }
@@ -628,74 +411,46 @@ function selectTile(r,c){
   if(t) t.classList.add('active');
 }
 
-// Popup
+// ---------- Popup ----------
 function showModal(title,text){
-  document.getElementById("modalTitle").textContent = title;
-  document.getElementById("modalText").textContent = text;
-  document.getElementById("modal").style.display = "flex";
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('modalText').textContent = text;
+  document.getElementById('modal').style.display = 'flex';
 }
 window.closeModal = function(){
-  document.getElementById("modal").style.display = "none";
-  console.log('WORDS_5_CLEAN:', WORDS_5_CLEAN.length, 'mots');
-console.log('WORDS_6_CLEAN:', WORDS_6_CLEAN.length, 'mots');
-try{
+  document.getElementById('modal').style.display = 'none';
   startGame();
-}catch(e){
-  console.error('Erreur au démarrage du jeu:', e);
-}
-}
+};
 
-// ===== Clavier physique (PC) sans ouvrir le clavier mobile =====
-// On utilise directement window.keydown pour PC.
-// Sur mobile, Safari ignore naturellement cet événement sans afficher le clavier.
-
+// ---------- Clavier physique PC ----------
 const accentMap = {
-  'é':'E','è':'E','ê':'E','ë':'E',
-  'à':'A','â':'A','ä':'A',
-  'î':'I','ï':'I',
-  'ô':'O','ö':'O',
-  'ù':'U','û':'U','ü':'U',
-  'ç':'C'
+  'é':'E','è':'E','ê':'E','ë':'E','à':'A','â':'A','ä':'A','î':'I','ï':'I','ô':'O','ö':'O','ù':'U','û':'U','ü':'U','ç':'C'
 };
 
 window.addEventListener('keydown', (e) => {
   if(gameOver) return;
-
-  // Empêcher le scroll avec espace ou flèches
-  if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)){
-    e.preventDefault();
-  }
-
+  if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)) e.preventDefault();
   if(e.key === 'Enter'){ e.preventDefault(); onEnter(); return; }
   if(e.key === 'Backspace'){ e.preventDefault(); onBack(); return; }
-
   let key = e.key;
-  if(accentMap[key]) key = accentMap[key];
-  else key = key.toUpperCase();
-
+  if(accentMap[key]) key = accentMap[key]; else key = key.toUpperCase();
   if(/^[A-Z]$/.test(key)){
     e.preventDefault();
     handleKey(key);
   }
 });
 
-// Reprendre le focus clavier au clic
-// Reprendre le focus clavier UNIQUEMENT quand on clique sur le clavier virtuel (évite l'ouverture auto du clavier mobile)
-document.body.addEventListener('click', (e)=>{
-  // Si on clique dans le clavier virtuel, on autorise le focus pour le clavier physique
-  const keyboardArea = document.getElementById('keyboard');
-  if(keyboardArea && keyboardArea.contains(e.target)){
-    kbd.focus();
-  }
-});
+// ---------- Initialisation ----------
+const modeSelect = document.getElementById('modeSelect');
+const difficultySelect = document.getElementById('difficultySelect');
+modeSelect.addEventListener('change', startGame);
+difficultySelect.addEventListener('change', ()=>{ difficulty = difficultySelect.value; });
 
-// Démarrage du jeu
+// Tests d'initialisation
+assert(document.getElementById('boardWrap') !== null, 'boardWrap existe');
+assert(document.getElementById('keyboard') !== null, 'keyboard existe');
+
 startGame();
-
-// Sur mobile/iPad : ne jamais donner le focus automatique à l’input caché
-// Le focus ne sera donné que si l’utilisateur clique sur le clavier virtuel
-
-});
 </script>
 </body>
 </html>
