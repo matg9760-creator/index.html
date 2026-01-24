@@ -116,18 +116,19 @@ const WORDS_5 = [
   'KOALA','LITRE','MARGE','NOYER','OASIS','PENSE','QUASI','REGLE','SPORT','TERRE',
   'USINE','VALVE','WAFER','XERES','YERBA','ZIGUE'
 ];
+
 const WORDS_6 = [
   'MAISON','JARDIN','PLAGES','SOLEIL','ROUTES','ECOLES','AMOURS','NEIGES','BUREAU','VOYAGE',
-  'ARCADE','BANANE','CANARD','DESSIN','ECRIRE','FLEURS','GUITAR','HIVERs'.toUpperCase().slice(0,6),
+  'ARCADE','BANANE','CANARD','DESSIN','ECRIRE','FLEURS','GUITAR','HIVERS',
   'ANIMAL','BRIQUE','CHAINE','DORMIR','ECLAIR','FRANCE','GLOIRE','HUMEUR','INSIDE','JOURNE',
   'KAYAKS','LAMINO','MANGER','NATURE','ORANGE','PAPIER','QUARTZ','RAPIDE','SAVOIR','TUNNEL',
   'USAGER','VALLEE','WAGONS','XENIAL','YOGURT','ZEPHYR',
   'ABRITE','BALCON','CACHER','DELAIS','ELEGIR','FARMER','GARCON','HABITS','IDEALS','JOUETS',
   'KILOSO','LACHER','MARCHE','NIVEAU','OBTENU','POURRI','QUERIR','REGLER','SAISON','TENTER',
-  'ULTRAS','VAGUES','WATERS','XYLOPH'.slice(0,6),'YENNES','ZOMBIE',
+  'ULTRAS','VAGUES','WATERS','XYLOPH','YENNES','ZOMBIE',
   'ADMIRE','BESOINS','CHANCE','DEVINE','EFFORT','FUTURE','GARDER','HONNEUR','IMPACT','JALOUS',
-  'KERMES','LUNDI'.padEnd(6,'S').slice(0,6),'MENTOR','NUAGES','OPPOSE','PLUIES','QUOTER','RANGER',
-  'SOUTIR'.slice(0,6),'TRAJET','USINES','VENTES','WIDOWS','XYLENE','YACHTS','ZENITH'
+  'KERMES','LUNDIS','MENTOR','NUAGES','OPPOSE','PLUIES','QUOTER','RANGER',
+  'SOUTIR','TRAJET','USINES','VENTES','WIDOWS','XYLENE','YACHTS','ZENITH'
 ];
 
 /*************** ÉTAT DU JEU ***************/
@@ -162,23 +163,18 @@ function selectTile(r,c){
 
 /*************** INITIALISATION ***************/
 function startGame(){
-  // Empêche tout redémarrage pendant une partie
   if(gameStarted) return;
   gameStarted = true;
 
-  // Désactive le bouton pendant la partie (sans retirer l'écouteur)
   startBtn.disabled = true;
 
   difficulty = difficultySelect.value;
   hardConstraints = { fixed:{}, required:{} };
 
-  startBtn.blur();
-
   WORD_LENGTH = parseInt(modeSelect.value,10);
   const list = WORD_LENGTH === 5 ? WORDS_5 : WORDS_6;
   WORD_SET = new Set(list);
   solution = list[Math.floor(Math.random()*list.length)];
-  console.log('Mot:', solution);
 
   currentRow = 0;
   currentCol = 0;
@@ -266,7 +262,6 @@ function checkWord(){
 
   const guess = grid[currentRow].join('');
 
-  // Ligne complète obligatoire
   if(grid[currentRow].some(l => l === '')){
     const rowEl = document.querySelectorAll('.row')[currentRow];
     rowEl.classList.add('shake');
@@ -274,7 +269,6 @@ function checkWord(){
     return;
   }
 
-  // Mode difficile : contraintes
   if(difficulty === 'hard'){
     for(const pos in hardConstraints.fixed){
       if(guess[pos] !== hardConstraints.fixed[pos]){
@@ -299,7 +293,6 @@ function checkWord(){
   const result = Array(WORD_LENGTH).fill('gray');
   const solArr = solution.split('');
 
-  // Verts
   for(let i=0;i<WORD_LENGTH;i++){
     if(guess[i]===solArr[i]){
       result[i]='green';
@@ -307,7 +300,6 @@ function checkWord(){
     }
   }
 
-  // Jaunes
   for(let i=0;i<WORD_LENGTH;i++){
     if(result[i]==='gray'){
       const idx=solArr.indexOf(guess[i]);
@@ -318,7 +310,6 @@ function checkWord(){
     }
   }
 
-  // Appliquer couleurs et mémoriser contraintes (force visuel inline)
   for(let i=0;i<WORD_LENGTH;i++){
     const tile=document.getElementById(`tile-${currentRow}-${i}`);
     tile.classList.remove('green','yellow','gray');
@@ -350,18 +341,14 @@ function checkWord(){
     colorKey(guess[i], result[i]);
   }
 
-  // Victoire
-  // Réactive le bouton seulement après la fin de partie
   if(guess===solution){
     gameOver = true;
     gameStarted = false;
     startBtn.disabled = false;
     alert('Bravo !');
-    startBtn.addEventListener('click', startGame);
     return;
   }
 
-  // Ligne suivante ou défaite
   currentRow++;
   currentCol=0;
 
@@ -372,7 +359,6 @@ function checkWord(){
     gameStarted = false;
     startBtn.disabled = false;
     alert('Perdu ! Mot : '+solution);
-    startBtn.addEventListener('click', startGame);
   }
 }
 
@@ -391,9 +377,10 @@ function colorKey(letter,color){
 }
 
 /*************** CLAVIER PHYSIQUE ***************/
-// Empêche l'ouverture du clavier virtuel mobile
+// Bloque l'ouverture du clavier virtuel, mais laisse les <select> fonctionner
 window.addEventListener('focusin', (e) => {
-  if(e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA'){
+  const tag = e.target.tagName;
+  if(tag !== 'INPUT' && tag !== 'TEXTAREA' && tag !== 'SELECT'){
     e.preventDefault();
     document.activeElement.blur();
   }
