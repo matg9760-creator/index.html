@@ -163,9 +163,8 @@ function selectTile(r,c){
 
 /*************** INITIALISATION ***************/
 function startGame(){
-  if(gameStarted) return;
+  // Redémarre toujours une nouvelle partie (permet de changer 5/6 lettres)
   gameStarted = true;
-
   startBtn.disabled = true;
 
   difficulty = difficultySelect.value;
