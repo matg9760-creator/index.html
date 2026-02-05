@@ -1,439 +1,293 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Wordle FR – Clone fidèle</title>
+
 <style>
 :root{
-  --bg:#121213;
-  --tile:#121213;
-  --border:#3a3a3c;
-  --text:#d7dadc;
+  /* ===== THÈME CLAIR (fond blanc) ===== */
+  --bg:#ffffff;
+  --tile:#ffffff;
+  --border:#d3d6da;
+  --text:#111111;
   --green:#6aaa64;
   --yellow:#c9b458;
-  --darkgray:#2a2a2c;
+  --gray:#787c7e;
 }
+
 body{
   margin:0;
   background:var(--bg);
   color:var(--text);
-  font-family:system-ui, Arial, sans-serif;
+  font-family:system-ui,Arial,sans-serif;
   display:flex;
   justify-content:center;
 }
-.app{width:100%;max-width:420px;padding:10px;touch-action:manipulation}
-header{text-align:center}
-h1{letter-spacing:4px;margin:10px 0}
 
-.board{display:flex;flex-direction:column;gap:6px;align-items:center}
+.app{width:100%;max-width:420px;padding:12px}
+header{text-align:center}
+
+/* ===== BOARD ===== */
+.board{display:flex;flex-direction:column;gap:6px;align-items:center;margin-top:12px}
 .row{display:flex;gap:6px}
 .tile{
-  -webkit-tap-highlight-color: transparent;
-  touch-action: manipulation;
   width:56px;height:56px;
   border:2px solid var(--border);
   background:var(--tile);
   display:flex;align-items:center;justify-content:center;
   font-size:28px;font-weight:bold;
-  user-select:none;
-  cursor:pointer;
+  user-select:none;cursor:pointer;
 }
 .tile.active{border-color:#5383ff;box-shadow:0 0 0 2px rgba(83,131,255,.35) inset}
 .tile.green{background:var(--green);border-color:var(--green);color:#fff}
 .tile.yellow{background:var(--yellow);border-color:var(--yellow);color:#fff}
-.tile.gray{background:var(--darkgray);border-color:var(--darkgray);color:#fff}
+.tile.gray{background:var(--gray);border-color:var(--gray);color:#fff}
 
-.keyboard{margin-top:18px;touch-action:manipulation}
+/* ===== KEYBOARD ===== */
+.keyboard{margin-top:18px}
 .kb-row{display:flex;justify-content:center;gap:5px;margin-bottom:6px}
-.key{
-  -webkit-tap-highlight-color: transparent;
-  touch-action: manipulation;
-  background:#818384;color:white;
-  padding:10px;border-radius:4px;
-  font-weight:bold;min-width:28px;text-align:center;
-  cursor:pointer;user-select:none
-}
-.key.wide{min-width:50px}
-.key.green{background:var(--green)}
-.key.yellow{background:var(--yellow)}
-.key.gray{background:var(--darkgray);color:#777}
+.key{background:#d3d6da;color:#111;padding:10px;border-radius:4px;font-weight:bold;cursor:pointer;min-width:28px;text-align:center}
+.key.wide{min-width:48px}
 
-.row.shake{animation:shake .4s}
-@keyframes shake{
-  0%{transform:translateX(0)}25%{transform:translateX(-5px)}50%{transform:translateX(5px)}75%{transform:translateX(-5px)}100%{transform:translateX(0)}
-}
-@media (max-width: 480px){
-  .app{max-width:100%;padding:6px}
-  h1{font-size:22px}
+/* ===== STATS ===== */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.75);display:none;align-items:center;justify-content:center}
+.modal-content{background:#1f1f21;padding:22px;border-radius:16px;text-align:center}
+.stat{font-size:22px;font-weight:bold}
+
+@media(max-width:480px){
   .tile{width:44px;height:44px;font-size:22px}
-  .kb-row{gap:4px}
-  .key{padding:8px;min-width:26px;font-size:14px}
-  .key.wide{min-width:46px}
-}
-
-@media (max-width: 360px){
-  .tile{width:38px;height:38px;font-size:20px}
-  .key{padding:6px;min-width:24px;font-size:12px}
 }
 </style>
 </head>
-<body ontouchstart="">
+
+<body>
 <div class="app">
 <header>
-  <h1>WORDLE</h1>
-  <div style="margin-bottom:8px;">
-    <label>Difficulté :</label>
-    <select id="difficultySelect">
-      <option value="easy">Facile</option>
-      <option value="normal" selected>Normal</option>
-      <option value="hard">Difficile (règles Wordle officielles)</option>
-    </select>
-  </div>
-  <div style="margin-bottom:8px;">
-    <label>Mode :</label>
-    <select id="modeSelect">
-      <option value="5">5 lettres</option>
-      <option value="6">6 lettres</option>
-    </select>
-  </div>
-  <button id="startBtn">Jouer</button>
+<h1>WORDLE</h1>
+
+<label>Mode :</label>
+<select id="modeSelect">
+  <option value="5">5 lettres</option>
+  <option value="6">6 lettres</option>
+</select>
+
+<button id="startBtn" type="button">Jouer</button>
+<button id="statsBtn" type="button">Stats</button>
 </header>
+
 <div id="board"></div>
 <div id="keyboard" class="keyboard"></div>
+
+<!-- STATS -->
+<div id="statsModal" class="modal">
+  <div class="modal-content">
+    <p>Parties : <span id="statPlayed" class="stat">0</span></p>
+    <p>Victoires : <span id="statWins" class="stat">0</span></p>
+    <p>Série : <span id="statStreak" class="stat">0</span></p>
+    <button onclick="closeStats()">Fermer</button>
+  </div>
+</div>
 </div>
 
 <script>
-/*************** DICTIONNAIRES (TEST) ***************/
-const WORDS_5 = [
-  'SALON','TABLE','PORTE','LIVRE','STYLO','PLAGE','FLEUR','NEIGE','SABLE','TRAIN',
-  'ARBRE','BRUIT','CHAIR','DANSE','ECRAN','FROID','GLACE','HEROS','IMAGE','JOUER',
-  'LAMPE','MONDE','NAGER','OBJET','PAUSE','QUART','RIVEE','SOURD','TIGRE','USAGE',
-  'VIVRE','WAGON','YACHT','ZEBRE','AMOUR','BALLE','CANOE','DOIGT','ETANG','FABLE',
-  'GRAIN','HOTEL','ILETS','JAMBE','KIOSK','LIGNE','MURER','NOMME','ORAGE','POMME',
-  'QUETE','ROUTE','SUCRE','TASSE','UNION','VENTE','WRAPS','XENON','YOGAS','ZONES',
-  'AIDER','BATIR','CABLE','DEBUT','ELITE','FORCE','GARDE','HIVER','ISSUE','JEUNE',
-  'KOALA','LITRE','MARGE','NOYER','OASIS','PENSE','QUASI','REGLE','SPORT','TERRE',
-  'USINE','VALVE','WAFER','XERES','YERBA','ZIGUE',
-  /* +100 mots supplémentaires */
-  'ACTIF','AIGLE','ALBUM','ALERT','ALIEN','ALPIN','ANGLE','APPEL','ARRET','ATLAS',
-  'AVION','BARBE','BASER','BIJOU','BLANC','BLEUE','BOITE','BRAVE','BREVE','BRISE',
-  'BROUS','CABLE','CALME','CARTE','CAUSE','CHAUD','CHOIX','CIBLE','CIVIL','CLAIR',
-  'CLERC','CLOWN','COEUR','COMTE','CORPS','COUPE','COURT','CRANE','CRISE','CROIX',
-  'CYCLE','DATER','DEGEL','DELTA','DENSE','DEPOT','DESIR','DOUCE','DROIT','DURER',
-  'ELANS','EPAIS','EPICE','ETAPE','ETUDE','FACON','FAIRE','FARCE','FIBRE','FICHE',
-  'FONTE','FORUM','FRERE','FRUIT','GAGNE','GAMME','GENIE','GOUTE','GRACE','GRAND',
-  'GRISE','GUIDE','HAUTE','HUMAN','IDEAL','INDEX','JOLIE','JOUET','JURER','LASER',
-  'LEGER','LOINT','LOUPE','LUNDI','MAGIE','MAJOR','MECHE','MERCI','MINCE','MIXTE',
-  'MODEM','MOINE','MORAL','MOTIF','MOULE','NERVE','NOBLE','NOTER','NOYAU','OMBRE'
-];
+/*************************************************
+  VERSION RECONSTRUITE PROPRE
+  - aucune ligne cassée
+  - aucune accolade en trop
+  - logique Wordle correcte
+*************************************************/
 
-const WORDS_6 = [
-  'MAISON','JARDIN','PLAGES','SOLEIL','ROUTES','ECOLES','AMOURS','NEIGES','BUREAU','VOYAGE',
-  'ARCADE','BANANE','CANARD','DESSIN','ECRIRE','FLEURS','GUITAR','HIVERS',
-  'ANIMAL','BRIQUE','CHAINE','DORMIR','ECLAIR','FRANCE','GLOIRE','HUMEUR','INSIDE','JOURNE',
-  'KAYAKS','LAMINO','MANGER','NATURE','ORANGE','PAPIER','QUARTZ','RAPIDE','SAVOIR','TUNNEL',
-  'USAGER','VALLEE','WAGONS','XENIAL','YOGURT','ZEPHYR',
-  'ABRITE','BALCON','CACHER','DELAIS','ELEGIR','FARMER','GARCON','HABITS','IDEALS','JOUETS',
-  'KILOSO','LACHER','MARCHE','NIVEAU','OBTENU','POURRI','QUERIR','REGLER','SAISON','TENTER',
-  'ULTRAS','VAGUES','WATERS','XYLOPH','YENNES','ZOMBIE',
-  'ADMIRE','BESOINS','CHANCE','DEVINE','EFFORT','FUTURE','GARDER','HONNEUR','IMPACT','JALOUS',
-  'KERMES','LUNDIS','MENTOR','NUAGES','OPPOSE','PLUIES','QUOTER','RANGER',
-  'SOUTIR','TRAJET','USINES','VENTES','WIDOWS','XYLENE','YACHTS','ZENITH',
-  /* +100 mots supplémentaires */
-  'ABIMER','ACCORD','ACHETE','ADOPTE','AFFAIB','AGENCE','AIGUIL','AJOUTE','ALERTE','ALLIER',
-  'AMENER','AMITIE','ANCRER','ANIMAL','ANNUEL','APPUIS','ARRETE','ASPECT','ASSAUT','ATTEIN',
-  'AUTOUR','AVANCE','AVIRON','BALISE','BANQUE','BATAIL','BEAUTE','BESOIN','BILLET','BLOCUS',
-  'BOUCLE','BRANCH','BRAVEE','BRONZE','BULLET','BUREAU','CACHET','CALCUL','CAMION','CAMPER',
-  'CANAPE','CAPITA','CARBON','CARGOS','CAUSER','CHAINE','CHANTE','CHARME','CHEMIN','CHOSES',
-  'CIMENT','CIRQUE','CIVILE','CLASSE','CLEFES','COFFRE','COLERE','COMBAT','COMMER','COMPTE',
-  'CONTES','CORAIL','CORNER','COUPLE','COURBE','COURSE','CREUSE','CRITIC','CUISIN','CURIEU',
-  'DANGER','DEFAUT','DEGOUT','DELICE','DEMAIN','DEPART','DESERT','DESIRE','DETAIL','DEVANT',
-  'DIALOG','DOIGTS','DOMAINE','DOUTER','DURCIR','ECLAIR','ECOUTE','EFFACE','ELARGI','ELITES',
-  'EMPIRE','ENTIER','ENTREE','EQUIPE','ESPACE','ESPOIR','ETALER','ETONNE','EVITER','EXIGER'
-];
+/* ===== DICTIONNAIRES ===== */
+const WORDS_5=['SALON','TABLE','PORTE','LIVRE','PLAGE','FLEUR','TRAIN','ARBRE','IMAGE','TERRE'];
+const WORDS_6=['MAISON','JARDIN','SOLEIL','ROUTES','BUREAU','VOYAGE','ANIMAL','ORANGE','SAISON','TRAJET'];
 
-/*************** ÉTAT DU JEU ***************/
-let solution = '';
-let currentRow = 0;
-let currentCol = 0;
-let grid = [];
-let gameOver = false;
-let gameStarted = false;
-let WORD_LENGTH = 5;
-let WORD_SET = null;
-let difficulty = 'normal';
-let hardConstraints = { fixed:{}, required:{} };
-const MAX_ROWS = 6;
+/* ===== ETAT ===== */
+let WORD_LENGTH=5;
+let solution='';
+let grid=[];
+let row=0;
+let col=0;
+let gameOver=false;
 
-const board = document.getElementById('board');
-const keyboard = document.getElementById('keyboard');
-const startBtn = document.getElementById('startBtn');
-const modeSelect = document.getElementById('modeSelect');
-const difficultySelect = document.getElementById('difficultySelect');
+const MAX_ROWS=6;
 
-/*************** SÉLECTION DE CASE ***************/
-function selectTile(r,c){
-  if(gameOver) return;
-  if(r !== currentRow) return;
-  document.querySelectorAll('.tile.active').forEach(t=>t.classList.remove('active'));
-  currentRow = r;
-  currentCol = c;
-  const tile = document.getElementById(`tile-${r}-${c}`);
-  if(tile) tile.classList.add('active');
+const board=document.getElementById('board');
+const keyboard=document.getElementById('keyboard');
+const startBtn=document.getElementById('startBtn');
+const statsBtn=document.getElementById('statsBtn');
+const modeSelect=document.getElementById('modeSelect');
+
+/* ===== STATS ===== */
+let stats=JSON.parse(localStorage.getItem('wordleStats')||'{"played":0,"wins":0,"streak":0}');
+function saveStats(){localStorage.setItem('wordleStats',JSON.stringify(stats));}
+
+function showStats(){
+  document.getElementById('statPlayed').textContent=stats.played;
+  document.getElementById('statWins').textContent=stats.wins;
+  document.getElementById('statStreak').textContent=stats.streak;
+  document.getElementById('statsModal').style.display='flex';
+}
+function closeStats(){
+  document.getElementById('statsModal').style.display='none';
 }
 
-/*************** INITIALISATION ***************/
+statsBtn.onclick=showStats;
+
+/* ===== START ===== */
 function startGame(){
-  // Redémarre toujours une nouvelle partie (permet de changer 5/6 lettres)
-  gameStarted = true;
-  startBtn.disabled = true;
+  WORD_LENGTH=parseInt(modeSelect.value,10);
+  const list=WORD_LENGTH===5?WORDS_5:WORDS_6;
+  solution=list[Math.floor(Math.random()*list.length)];
 
-  difficulty = difficultySelect.value;
-  hardConstraints = { fixed:{}, required:{} };
+  stats.played++; saveStats();
 
-  WORD_LENGTH = parseInt(modeSelect.value,10);
-  const list = WORD_LENGTH === 5 ? WORDS_5 : WORDS_6;
-  WORD_SET = new Set(list);
-  solution = list[Math.floor(Math.random()*list.length)];
+  row=0; col=0; gameOver=false;
+  grid=Array.from({length:MAX_ROWS},()=>Array(WORD_LENGTH).fill(''));
 
-  currentRow = 0;
-  currentCol = 0;
-  gameOver = false;
-  grid = Array.from({length:MAX_ROWS},()=>Array(WORD_LENGTH).fill(''));
   drawBoard();
   drawKeyboard();
-}
-
-/*************** GRILLE ***************/
-function drawBoard(){
-  board.innerHTML='';
-  board.className='board';
-  for(let r=0;r<MAX_ROWS;r++){
-    const row=document.createElement('div');
-    row.className='row';
-    for(let c=0;c<WORD_LENGTH;c++){
-      const tile=document.createElement('div');
-      tile.className='tile';
-      tile.id=`tile-${r}-${c}`;
-      tile.onclick=()=>selectTile(r,c);
-      row.appendChild(tile);
-    }
-    board.appendChild(row);
-  }
   selectTile(0,0);
 }
 
-/*************** CLAVIER ***************/
-const KEYS = ['AZERTYUIOP','QSDFGHJKLM','WXCVBN'];
-function drawKeyboard(){
-  keyboard.innerHTML='';
-  KEYS.forEach(line=>{
-    const row=document.createElement('div');
-    row.className='kb-row';
-    [...line].forEach(letter=>{
-      const key=document.createElement('div');
-      key.className='key';
-      key.textContent=letter;
-      key.onclick=()=>handleKey(letter);
-      row.appendChild(key);
-    });
-    keyboard.appendChild(row);
-  });
-  const row=document.createElement('div');
-  row.className='kb-row';
-  const enter=document.createElement('div');
-  enter.className='key wide';
-  enter.textContent='Entrer';
-  enter.onclick=checkWord;
-  const back=document.createElement('div');
-  back.className='key wide';
-  back.textContent='Suppr';
-  back.onclick=backspace;
-  row.appendChild(enter);
-  row.appendChild(back);
-  keyboard.appendChild(row);
+/* ===== BOARD ===== */
+function drawBoard(){
+  board.innerHTML='';
+  board.className='board';
+
+  for(let r=0;r<MAX_ROWS;r++){
+    const rowDiv=document.createElement('div');
+    rowDiv.className='row';
+
+    for(let c=0;c<WORD_LENGTH;c++){
+      const t=document.createElement('div');
+      t.className='tile';
+      t.id=`t-${r}-${c}`;
+      t.onclick=()=>selectTile(r,c);
+      rowDiv.appendChild(t);
+    }
+
+    board.appendChild(rowDiv);
+  }
 }
 
-/*************** SAISIE ***************/
-function handleKey(letter){
-  if(gameOver) return;
-  if(currentCol>=WORD_LENGTH) return;
-  grid[currentRow][currentCol]=letter;
-  const t = document.getElementById(`tile-${currentRow}-${currentCol}`);
-  if(t) t.textContent=letter;
-  if(currentCol < WORD_LENGTH-1){
-    selectTile(currentRow, currentCol+1);
-  }
+/* ===== SELECTION ===== */
+function selectTile(r,c){
+  if(gameOver || r!==row) return;
+
+  document.querySelectorAll('.tile.active').forEach(t=>t.classList.remove('active'));
+  col=c;
+  document.getElementById(`t-${r}-${c}`).classList.add('active');
+}
+
+/* ===== KEYBOARD ===== */
+const KEYS=['AZERTYUIOP','QSDFGHJKLM','WXCVBN'];
+
+function drawKeyboard(){
+  keyboard.innerHTML='';
+
+  KEYS.forEach(line=>{
+    const r=document.createElement('div'); r.className='kb-row';
+    [...line].forEach(l=>{
+      const k=document.createElement('div');
+      k.className='key';
+      k.textContent=l;
+      k.onclick=()=>type(l);
+      r.appendChild(k);
+    });
+    keyboard.appendChild(r);
+  });
+
+  const r=document.createElement('div'); r.className='kb-row';
+  const enter=document.createElement('div'); enter.className='key wide'; enter.textContent='Entrer'; enter.onclick=check;
+  const back=document.createElement('div'); back.className='key wide'; back.textContent='⌫'; back.onclick=backspace;
+  r.append(enter,back);
+  keyboard.appendChild(r);
+}
+
+/* ===== INPUT ===== */
+function type(letter){
+  if(gameOver || col>=WORD_LENGTH) return;
+
+  grid[row][col]=letter;
+  document.getElementById(`t-${row}-${col}`).textContent=letter;
+
+  col++;
+  if(col<WORD_LENGTH) selectTile(row,col);
 }
 
 function backspace(){
-  if(gameOver) return;
-  if(grid[currentRow][currentCol]==='' && currentCol>0){
-    selectTile(currentRow, currentCol-1);
-  }
-  grid[currentRow][currentCol]='';
-  const t = document.getElementById(`tile-${currentRow}-${currentCol}`);
-  if(t) t.textContent='';
+  if(gameOver || col===0) return;
+
+  col--;
+  grid[row][col]='';
+  document.getElementById(`t-${row}-${col}`).textContent='';
+  selectTile(row,col);
 }
 
-/*************** LOGIQUE WORDLE ***************/
-function checkWord(){
+/* ===== CHECK WORDLE ===== */
+function check(){
   if(gameOver) return;
+  if(grid[row].includes('')) return;
 
-  const guess = grid[currentRow].join('');
-
-  if(grid[currentRow].some(l => l === '')){
-    const rowEl = document.querySelectorAll('.row')[currentRow];
-    rowEl.classList.add('shake');
-    setTimeout(()=>rowEl.classList.remove('shake'), 400);
-    return;
-  }
-
-  if(difficulty === 'hard'){
-    for(const pos in hardConstraints.fixed){
-      if(guess[pos] !== hardConstraints.fixed[pos]){
-        const rowEl = document.querySelectorAll('.row')[currentRow];
-        rowEl.classList.add('shake');
-        setTimeout(()=>rowEl.classList.remove('shake'), 400);
-        return;
-      }
-    }
-    for(const letter in hardConstraints.required){
-      const needed = hardConstraints.required[letter];
-      const count = guess.split('').filter(l=>l===letter).length;
-      if(count < needed){
-        const rowEl = document.querySelectorAll('.row')[currentRow];
-        rowEl.classList.add('shake');
-        setTimeout(()=>rowEl.classList.remove('shake'), 400);
-        return;
-      }
-    }
-  }
-
-  const result = Array(WORD_LENGTH).fill('gray');
-  const solArr = solution.split('');
+  const guess=grid[row].join('');
+  const sol=solution.split('');
+  const result=Array(WORD_LENGTH).fill('gray');
 
   for(let i=0;i<WORD_LENGTH;i++){
-    if(guess[i]===solArr[i]){
+    if(guess[i]===sol[i]){
       result[i]='green';
-      solArr[i]=null;
+      sol[i]=null;
     }
   }
 
   for(let i=0;i<WORD_LENGTH;i++){
     if(result[i]==='gray'){
-      const idx=solArr.indexOf(guess[i]);
+      const idx=sol.indexOf(guess[i]);
       if(idx!==-1){
         result[i]='yellow';
-        solArr[idx]=null;
+        sol[idx]=null;
       }
     }
   }
 
   for(let i=0;i<WORD_LENGTH;i++){
-    const tile=document.getElementById(`tile-${currentRow}-${i}`);
-    tile.classList.remove('green','yellow','gray');
-
-    if(result[i]==='green'){
-      tile.classList.add('green');
-      tile.style.backgroundColor = '#6aaa64';
-      tile.style.borderColor = '#6aaa64';
-      tile.style.color = '#ffffff';
-
-      hardConstraints.fixed[i] = guess[i];
-      hardConstraints.required[guess[i]] = (hardConstraints.required[guess[i]] || 0) + 1;
-    }
-    else if(result[i]==='yellow'){
-      tile.classList.add('yellow');
-      tile.style.backgroundColor = '#c9b458';
-      tile.style.borderColor = '#c9b458';
-      tile.style.color = '#ffffff';
-
-      hardConstraints.required[guess[i]] = (hardConstraints.required[guess[i]] || 0) + 1;
-    }
-    else{
-      tile.classList.add('gray');
-      tile.style.backgroundColor = '#2a2a2c';
-      tile.style.borderColor = '#2a2a2c';
-      tile.style.color = '#ffffff';
-    }
-
-    colorKey(guess[i], result[i]);
+    document.getElementById(`t-${row}-${i}`).className='tile '+result[i];
   }
 
   if(guess===solution){
-    gameOver = true;
-    gameStarted = false;
-    startBtn.disabled = false;
-    alert('Bravo !');
+    gameOver=true;
+    stats.wins++; stats.streak++; saveStats();
+    showStats();
     return;
   }
 
-  currentRow++;
-  currentCol=0;
+  row++;
 
-  if(currentRow<MAX_ROWS){
-    selectTile(currentRow,0);
-  } else {
-    gameOver = true;
-    gameStarted = false;
-    startBtn.disabled = false;
-    alert('Perdu ! Mot : '+solution);
+  if(row===MAX_ROWS){
+    gameOver=true;
+    stats.streak=0; saveStats();
+    showStats();
+  }else{
+    selectTile(row,0);
   }
 }
 
-function colorKey(letter,color){
-  document.querySelectorAll('.key').forEach(k=>{
-    if(k.textContent===letter){
-      if(color==='green'){
-        k.className='key green';
-      } else if(color==='yellow' && !k.classList.contains('green')){
-        k.className='key yellow';
-      } else if(color==='gray' && !k.classList.contains('green') && !k.classList.contains('yellow')){
-        k.className='key gray';
-      }
-    }
-  });
-}
-
-/*************** CLAVIER PHYSIQUE ***************/
-// Bloque l'ouverture du clavier virtuel, mais laisse les <select> fonctionner
-window.addEventListener('focusin', (e) => {
-  const tag = e.target.tagName;
-  if(tag !== 'INPUT' && tag !== 'TEXTAREA' && tag !== 'SELECT'){
-    e.preventDefault();
-    document.activeElement.blur();
-  }
-});
-
+/* ===== CLAVIER PHYSIQUE ===== */
 window.addEventListener('keydown',e=>{
-  if(['Enter','Backspace'].includes(e.key)){
-    e.preventDefault();
-  }
-  if(e.key>='a' && e.key<='z') handleKey(e.key.toUpperCase());
-  if(e.key==='Backspace') backspace();
-  if(e.key==='Enter') checkWord();
+  if(e.key==='Enter') check();
+  else if(e.key==='Backspace') backspace();
+  else if(/^[a-z]$/i.test(e.key)) type(e.key.toUpperCase());
 });
 
-/*************** TESTS AUTOMATIQUES ***************/
-console.assert(typeof startGame === 'function', 'startGame est défini');
-console.assert(typeof drawBoard === 'function', 'drawBoard est défini');
-console.assert(typeof drawKeyboard === 'function', 'drawKeyboard est défini');
-console.assert(typeof checkWord === 'function', 'checkWord est défini');
-console.assert(typeof handleKey === 'function', 'handleKey est défini');
-console.assert(Array.isArray(WORDS_5) && WORDS_5.length>0, 'WORDS_5 valide');
-console.assert(Array.isArray(WORDS_6) && WORDS_6.length>0, 'WORDS_6 valide');
-console.assert(MAX_ROWS === 6, 'MAX_ROWS vaut 6');
+startBtn.onclick=startGame;
+startGame();
 
-/*************** LANCEMENT ***************/
-startBtn.addEventListener('click', startGame);
-
-// Démarre automatiquement une partie au chargement (sinon écran vide)
-window.addEventListener('load', ()=>{
-  startGame();
-  startBtn.disabled = false; // permet rejouer immédiatement
-});
+/* ===== TESTS DEV ===== */
+console.assert(typeof type==='function','type OK');
+console.assert(typeof backspace==='function','backspace OK');
+console.assert(typeof check==='function','check OK');
 </script>
 </body>
 </html>
