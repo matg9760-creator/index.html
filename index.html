@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Wordle FR Complet</title>
+<title>Wordle FR</title>
 
 <style>
 :root{
@@ -17,7 +17,7 @@ body{
   font-family:Arial, sans-serif;
   display:flex;
   justify-content:center;
-  background:white;
+  background:#ffffff;
 }
 
 .app{
@@ -80,9 +80,6 @@ body{
   font-weight:bold;
 }
 
-.key.green{background:var(--green);color:white}
-.key.yellow{background:var(--yellow);color:white}
-.key.gray{background:var(--gray);color:white}
 .key.wide{min-width:60px}
 </style>
 </head>
@@ -98,8 +95,6 @@ body{
 <option value="6">6 lettres</option>
 </select>
 
-<button onclick="startGame()">Nouvelle partie</button>
-
 <div id="board" class="board"></div>
 <div id="keyboard" class="keyboard"></div>
 
@@ -107,46 +102,23 @@ body{
 
 <script>
 
-/* ===============================
-   DICTIONNAIRES 200+ MOTS RÉELS
-================================ */
+/* =========================
+   DICTIONNAIRES
+========================= */
 
 const WORDS_5 = [
 "SALON","TABLE","PORTE","PLAGE","FLEUR","TRAIN","ARBRE","IMAGE","TERRE","CHAUD",
-"FRUIT","BRAVE","MANGE","MONDE","NAGER","ROUTE","SPORT","SABLE","VIRUS","ZEBRE",
-"BANAL","BARBE","BLANC","BOITE","BONUS","CABLE","CALME","CANAL","CARRE","CAUSE",
-"CLAIR","COEUR","CORDE","DANSE","DEBUT","DELTA","DESIR","DOIGT","DONNE","DOUTE",
-"DROIT","ECRAN","ELITE","EMAIL","ENFER","ENTRE","ESSAI","ETAPE","ETUDE","EXTRA",
-"FAIRE","FEMME","FERME","FINAL","FORCE","GAGNE","GARDE","GENRE","GLOBE","GRAND",
-"GUIDE","HABIT","HIVER","HOMME","HOTEL","INDEX","JETER","JEUNE","JOUER","KARMA",
-"KAYAK","LAMPE","LARGE","LASER","LEGAL","LIVRE","LOGER","MAGIE","MAIRE","MARIN",
-"MASSE","MATCH","MERCI","METRE","MOTIF","NATIF","NAVAL","NERVE","NOBLE","NOIRE",
-"NOMME","NORME","NUAGE","OASIS","OBJET","ODEUR","OFFRE","OMBRE","OPERA","ORAGE",
-"ORDRE","ORGUE","OUVRE","PANNE","PARLE","PARTI","PECHE","PENSE","PHOTO","PLUIE",
-"QUART","QUEUE","RADAR","RAISON","RANGE","RAYON","REGLE","REINE","REPOS","ROBOT",
-"ROUGE","SERIE","SIROP","SOMME","TABLE","TACHE","TAILLE","TARIF","TEMPS","TEXTE",
-"TIGRE","TITRE","TOTAL","TRACE","TRAIN","UNION","UNITE","USAGE","USINE","UTILE",
-"VALSE","VENIR","VENTE","VERBE","VERRE","VILLE","VITAL","WAGON","XENON","YACHT",
-"YOGAS","ZEROS","ZONES"
+"FRUIT","BRAVE","MANGE","MONDE","NAGER","ROUTE","SPORT","SABLE","VIRUS","ZEBRE"
 ];
 
 const WORDS_6 = [
 "MAISON","JARDIN","SOLEIL","ROUTES","BUREAU","VOYAGE","ANIMAL","ORANGE","SAISON","TRAJET",
-"PARLER","PARTIR","PASSER","PENSER","PLACER","PLANTE","PALAIS","PANIER","PECHER","PERDRE",
-"PERMIS","PIERRE","QUATRE","QUILLE","QUOTAS","RACINE","RANGER","RAPIDE","RARETE","RECENT",
-"REGLES","RELIEF","REMPLI","RENDRE","RESEAU","RESTER","RETOUR","SAVOIR","SECRET","SENTIR",
-"SERIES","SERVIR","SIGNER","SIMPLE","SORTIR","TABLES","TAILLE","TARIFS","TEMOIN","TERRES",
-"TESTER","TEXTER","TITRES","TOURNE","TROUVE","ULTRAS","USAGES","VALEUR","VALIDE","VARIER",
-"VENDRE","VENTES","VERITE","VERSER","VIABLE","VILLES","VIOLET","VISAGE","VIVANT","ZENITH",
-"ABIMER","ACCORD","ACTEUR","ACTION","ADORER","AGENCE","AMENER","AMITIE","APPORT","ARRIVE",
-"AVANCE","AVENIR","BALADE","BARQUE","BEAUTE","BELIER","BESOIN","BILLET","BOUCLE","BOUGER",
-"BOUTON","BRILLE","BRULER","CABANE","CADEAU","CALMER","CAMION","CANARD","CARNET","CARREE",
-"CASSER","CENTRE","CHAINE","CHALET","CHANCE","CHEMIN","CHOISI","CLIENT","COLERE","COMBAT"
+"PARLER","PARTIR","PASSER","PENSER","PLACER","PLANTE","PALAIS","PANIER","PECHER","PERDRE"
 ];
 
-/* ===============================
-   LOGIQUE
-================================ */
+/* =========================
+   VARIABLES
+========================= */
 
 let WORD_LENGTH = 5;
 let solution = "";
@@ -160,20 +132,33 @@ const board = document.getElementById("board");
 const keyboard = document.getElementById("keyboard");
 const modeSelect = document.getElementById("modeSelect");
 
+/* =========================
+   DÉMARRAGE
+========================= */
+
+modeSelect.addEventListener("change", startGame);
+
 function startGame(){
+
   WORD_LENGTH = parseInt(modeSelect.value);
+
   const list = WORD_LENGTH === 5 ? WORDS_5 : WORDS_6;
   solution = list[Math.floor(Math.random()*list.length)];
 
   row = 0;
   col = 0;
   gameOver = false;
+
   grid = Array.from({length:MAX_ROWS},()=>Array(WORD_LENGTH).fill(""));
 
   drawBoard();
   drawKeyboard();
   selectTile(0,0);
 }
+
+/* =========================
+   GRILLE
+========================= */
 
 function drawBoard(){
   board.innerHTML="";
@@ -197,6 +182,10 @@ function selectTile(r,c){
   col=c;
   document.getElementById(`t-${r}-${c}`).classList.add("active");
 }
+
+/* =========================
+   CLAVIER
+========================= */
 
 function drawKeyboard(){
   keyboard.innerHTML="";
@@ -232,6 +221,10 @@ function drawKeyboard(){
   keyboard.appendChild(r);
 }
 
+/* =========================
+   LOGIQUE
+========================= */
+
 function type(letter){
   if(gameOver || col>=WORD_LENGTH) return;
   grid[row][col]=letter;
@@ -251,7 +244,6 @@ function backspace(){
 }
 
 function check(){
-  if(gameOver) return;
   if(grid[row].includes("")) return;
 
   const guess=grid[row].join("");
