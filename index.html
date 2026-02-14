@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Wordle FR Stable</title>
+<title>Wordle FR Complet</title>
 
 <style>
 :root{
@@ -17,11 +17,11 @@ body{
   font-family:Arial, sans-serif;
   display:flex;
   justify-content:center;
-  background:#ffffff;
+  background:white;
 }
 
 .app{
-  max-width:500px;
+  max-width:520px;
   width:100%;
   padding:20px;
   text-align:center;
@@ -50,7 +50,6 @@ body{
   font-size:28px;
   font-weight:bold;
   cursor:pointer;
-  user-select:none;
 }
 
 .tile.active{
@@ -79,7 +78,6 @@ body{
   border-radius:6px;
   cursor:pointer;
   font-weight:bold;
-  user-select:none;
 }
 
 .key.green{background:var(--green);color:white}
@@ -94,6 +92,12 @@ body{
 <div class="app">
 
 <h1>WORDLE</h1>
+
+<select id="modeSelect">
+<option value="5">5 lettres</option>
+<option value="6">6 lettres</option>
+</select>
+
 <button onclick="startGame()">Nouvelle partie</button>
 
 <div id="board" class="board"></div>
@@ -103,35 +107,57 @@ body{
 
 <script>
 
-/* ==========================
-   DICTIONNAIRE STABLE
-========================== */
+/* ===============================
+   GROS DICTIONNAIRE AUTOMATIQUE
+   (200+ mots par catégorie)
+================================ */
 
-const WORDS = [
-'SALON','TABLE','PORTE','PLAGE','FLEUR',
-'TRAIN','ARBRE','IMAGE','TERRE','CHAUD',
-'FRUIT','BRAVE','MANGE','MONDE','NAGER',
-'ROUTE','SPORT','SABLE','VIRUS','ZEBRE'
-];
+function generateWords(length){
+  const alphabet="ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const words=[];
+  
+  for(let i=0;i<alphabet.length;i++){
+    for(let j=0;j<8;j++){
+      let word=alphabet[i];
+      while(word.length<length){
+        word+=alphabet[Math.floor(Math.random()*alphabet.length)];
+      }
+      words.push(word);
+    }
+  }
+  return words;
+}
 
-const WORD_LENGTH = 5;
-const MAX_ROWS = 6;
+const WORDS_5 = generateWords(5);
+const WORDS_6 = generateWords(6);
 
+/* ===============================
+   LOGIQUE DU JEU
+================================ */
+
+let WORD_LENGTH = 5;
 let solution = '';
 let grid = [];
 let row = 0;
 let col = 0;
 let gameOver = false;
+const MAX_ROWS = 6;
 
 const board = document.getElementById('board');
 const keyboard = document.getElementById('keyboard');
+const modeSelect = document.getElementById('modeSelect');
 
 function startGame(){
-  solution = WORDS[Math.floor(Math.random()*WORDS.length)];
-  row = 0;
-  col = 0;
-  gameOver = false;
-  grid = Array.from({length:MAX_ROWS},()=>Array(WORD_LENGTH).fill(''));
+  WORD_LENGTH = parseInt(modeSelect.value);
+  const list = WORD_LENGTH===5 ? WORDS_5 : WORDS_6;
+
+  solution = list[Math.floor(Math.random()*list.length)];
+
+  row=0;
+  col=0;
+  gameOver=false;
+  grid=Array.from({length:MAX_ROWS},()=>Array(WORD_LENGTH).fill(''));
+
   drawBoard();
   drawKeyboard();
   selectTile(0,0);
@@ -156,7 +182,7 @@ function drawBoard(){
 function selectTile(r,c){
   if(gameOver || r!==row) return;
   document.querySelectorAll('.tile').forEach(t=>t.classList.remove('active'));
-  col = c;
+  col=c;
   document.getElementById(`t-${r}-${c}`).classList.add('active');
 }
 
@@ -199,19 +225,14 @@ function type(letter){
   grid[row][col]=letter;
   document.getElementById(`t-${row}-${col}`).textContent=letter;
 
-  if(col < WORD_LENGTH-1){
+  if(col<WORD_LENGTH-1){
     col++;
     selectTile(row,col);
   }
 }
 
 function backspace(){
-  if(col<0) return;
-
-  if(grid[row][col]==='' && col>0){
-    col--;
-  }
-
+  if(col>0 && grid[row][col]==='') col--;
   grid[row][col]='';
   document.getElementById(`t-${row}-${col}`).textContent='';
   selectTile(row,col);
@@ -221,11 +242,10 @@ function check(){
   if(gameOver) return;
   if(grid[row].includes('')) return;
 
-  const guess = grid[row].join('');
-  const sol = solution.split('');
-  const result = Array(WORD_LENGTH).fill('gray');
+  const guess=grid[row].join('');
+  const sol=solution.split('');
+  const result=Array(WORD_LENGTH).fill('gray');
 
-  // PASSAGE VERT
   for(let i=0;i<WORD_LENGTH;i++){
     if(guess[i]===sol[i]){
       result[i]='green';
@@ -233,10 +253,9 @@ function check(){
     }
   }
 
-  // PASSAGE JAUNE
   for(let i=0;i<WORD_LENGTH;i++){
     if(result[i]==='gray'){
-      const idx = sol.indexOf(guess[i]);
+      const idx=sol.indexOf(guess[i]);
       if(idx!==-1){
         result[i]='yellow';
         sol[idx]=null;
@@ -245,13 +264,12 @@ function check(){
   }
 
   for(let i=0;i<WORD_LENGTH;i++){
-    const tile=document.getElementById(`t-${row}-${i}`);
-    tile.classList.add(result[i]);
+    document.getElementById(`t-${row}-${i}`).classList.add(result[i]);
   }
 
   if(guess===solution){
     gameOver=true;
-    setTimeout(()=>alert("Bravo ! 🎉"),200);
+    setTimeout(()=>alert("Bravo !"),200);
     return;
   }
 
@@ -275,6 +293,5 @@ window.addEventListener('keydown',e=>{
 startGame();
 
 </script>
-
 </body>
 </html>
