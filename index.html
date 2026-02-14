@@ -1,3 +1,109 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wordle FR Stable</title>
+
+<style>
+:root{
+  --green:#6aaa64;
+  --yellow:#e2c044;
+  --gray:#787c7e;
+}
+
+body{
+  margin:0;
+  font-family:Arial, sans-serif;
+  display:flex;
+  justify-content:center;
+  background:#fff;
+}
+
+.app{
+  max-width:520px;
+  width:100%;
+  padding:20px;
+  text-align:center;
+}
+
+.board{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  margin-top:20px;
+  align-items:center;
+}
+
+.row{
+  display:flex;
+  gap:6px;
+}
+
+.tile{
+  width:55px;
+  height:55px;
+  border:2px solid #d3d6da;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:24px;
+  font-weight:bold;
+  cursor:pointer;
+  user-select:none;
+}
+
+.tile.active{
+  border-color:#5383ff;
+}
+
+.tile.green{background:var(--green);color:#fff;border-color:var(--green)}
+.tile.yellow{background:var(--yellow);color:#fff;border-color:var(--yellow)}
+.tile.gray{background:var(--gray);color:#fff;border-color:var(--gray)}
+
+.keyboard{
+  margin-top:20px;
+}
+
+.kb-row{
+  display:flex;
+  justify-content:center;
+  gap:5px;
+  margin-bottom:6px;
+}
+
+.key{
+  padding:8px 10px;
+  background:#d3d6da;
+  border-radius:6px;
+  cursor:pointer;
+  font-weight:bold;
+  user-select:none;
+}
+
+.key.green{background:var(--green);color:#fff}
+.key.yellow{background:var(--yellow);color:#fff}
+.key.gray{background:var(--gray);color:#fff}
+.key.wide{min-width:60px}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+<h1>WORDLE</h1>
+
+<select id="modeSelect">
+<option value="5">5 lettres</option>
+<option value="6">6 lettres</option>
+</select>
+
+<div id="board" class="board"></div>
+<div id="keyboard" class="keyboard"></div>
+
+</div>
+
 <script>
 
 /* =========================
@@ -17,34 +123,33 @@ let grid = [];
 let row = 0;
 let col = 0;
 let gameOver = false;
+let keyStates = {};
+
 const MAX_ROWS = 6;
 
 const board = document.getElementById("board");
 const keyboard = document.getElementById("keyboard");
 const modeSelect = document.getElementById("modeSelect");
 
-const keyStates = {}; // mémorise meilleur état
+/* =========================
+   START GAME
+========================= */
 
 modeSelect.addEventListener("change", startGame);
-
-/* =========================
-   START
-========================= */
 
 function startGame(){
 
   WORD_LENGTH = parseInt(modeSelect.value);
   const list = WORD_LENGTH === 5 ? WORDS_5 : WORDS_6;
+
   solution = list[Math.floor(Math.random()*list.length)];
 
-  row=0;
-  col=0;
-  gameOver=false;
+  row = 0;
+  col = 0;
+  gameOver = false;
+  keyStates = {};
 
   grid = Array.from({length:MAX_ROWS},()=>Array(WORD_LENGTH).fill(""));
-
-  // Reset clavier
-  for (let k in keyStates) delete keyStates[k];
 
   drawBoard();
   drawKeyboard();
@@ -145,19 +250,19 @@ function backspace(){
 
 function check(){
 
+  if(gameOver) return;
   if(grid[row].includes("")) return;
 
   const guess = grid[row].join("");
-  const solutionArray = solution.split("");
   const result = Array(WORD_LENGTH).fill("gray");
 
-  // Compter occurrences
   const letterCount = {};
-  solutionArray.forEach(l=>{
-    letterCount[l]=(letterCount[l]||0)+1;
-  });
 
-  // VERT
+  for(let l of solution){
+    letterCount[l]=(letterCount[l]||0)+1;
+  }
+
+  // PASSAGE VERT
   for(let i=0;i<WORD_LENGTH;i++){
     if(guess[i]===solution[i]){
       result[i]="green";
@@ -165,7 +270,7 @@ function check(){
     }
   }
 
-  // JAUNE
+  // PASSAGE JAUNE
   for(let i=0;i<WORD_LENGTH;i++){
     if(result[i]==="gray" && letterCount[guess[i]]>0){
       result[i]="yellow";
@@ -176,7 +281,7 @@ function check(){
   // Appliquer
   for(let i=0;i<WORD_LENGTH;i++){
     document.getElementById(`t-${row}-${i}`).classList.add(result[i]);
-    updateKeyboardColor(guess[i], result[i]);
+    updateKeyboard(guess[i],result[i]);
   }
 
   if(guess===solution){
@@ -197,27 +302,27 @@ function check(){
 }
 
 /* =========================
-   CLAVIER PRIORITÉ CORRECTE
+   KEYBOARD UPDATE
 ========================= */
 
-function updateKeyboardColor(letter,color){
+function updateKeyboard(letter,color){
 
-  const priority = {gray:1, yellow:2, green:3};
+  const priority = {gray:1,yellow:2,green:3};
 
   if(!keyStates[letter] || priority[color] > priority[keyStates[letter]]){
 
     keyStates[letter]=color;
 
-    document.querySelectorAll(".key").forEach(key=>{
-      if(key.textContent===letter){
-        key.className="key "+color;
+    document.querySelectorAll(".key").forEach(k=>{
+      if(k.textContent===letter){
+        k.className="key "+color;
       }
     });
   }
 }
 
 /* =========================
-   CLAVIER PHYSIQUE
+   PHYSICAL KEYBOARD
 ========================= */
 
 window.addEventListener("keydown",e=>{
@@ -229,3 +334,6 @@ window.addEventListener("keydown",e=>{
 startGame();
 
 </script>
+
+</body>
+</html>
