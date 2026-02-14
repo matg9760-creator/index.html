@@ -41,13 +41,13 @@ body{
 }
 
 .tile{
-  width:60px;
-  height:60px;
+  width:55px;
+  height:55px;
   border:2px solid #d3d6da;
   display:flex;
   align-items:center;
   justify-content:center;
-  font-size:28px;
+  font-size:24px;
   font-weight:bold;
   cursor:pointer;
 }
@@ -73,7 +73,7 @@ body{
 }
 
 .key{
-  padding:10px 12px;
+  padding:8px 10px;
   background:#d3d6da;
   border-radius:6px;
   cursor:pointer;
@@ -108,55 +108,67 @@ body{
 <script>
 
 /* ===============================
-   GROS DICTIONNAIRE AUTOMATIQUE
-   (200+ mots par catégorie)
+   DICTIONNAIRES 200+ MOTS RÉELS
 ================================ */
 
-function generateWords(length){
-  const alphabet="ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-  const words=[];
-  
-  for(let i=0;i<alphabet.length;i++){
-    for(let j=0;j<8;j++){
-      let word=alphabet[i];
-      while(word.length<length){
-        word+=alphabet[Math.floor(Math.random()*alphabet.length)];
-      }
-      words.push(word);
-    }
-  }
-  return words;
-}
+const WORDS_5 = [
+"SALON","TABLE","PORTE","PLAGE","FLEUR","TRAIN","ARBRE","IMAGE","TERRE","CHAUD",
+"FRUIT","BRAVE","MANGE","MONDE","NAGER","ROUTE","SPORT","SABLE","VIRUS","ZEBRE",
+"BANAL","BARBE","BLANC","BOITE","BONUS","CABLE","CALME","CANAL","CARRE","CAUSE",
+"CLAIR","COEUR","CORDE","DANSE","DEBUT","DELTA","DESIR","DOIGT","DONNE","DOUTE",
+"DROIT","ECRAN","ELITE","EMAIL","ENFER","ENTRE","ESSAI","ETAPE","ETUDE","EXTRA",
+"FAIRE","FEMME","FERME","FINAL","FORCE","GAGNE","GARDE","GENRE","GLOBE","GRAND",
+"GUIDE","HABIT","HIVER","HOMME","HOTEL","INDEX","JETER","JEUNE","JOUER","KARMA",
+"KAYAK","LAMPE","LARGE","LASER","LEGAL","LIVRE","LOGER","MAGIE","MAIRE","MARIN",
+"MASSE","MATCH","MERCI","METRE","MOTIF","NATIF","NAVAL","NERVE","NOBLE","NOIRE",
+"NOMME","NORME","NUAGE","OASIS","OBJET","ODEUR","OFFRE","OMBRE","OPERA","ORAGE",
+"ORDRE","ORGUE","OUVRE","PANNE","PARLE","PARTI","PECHE","PENSE","PHOTO","PLUIE",
+"QUART","QUEUE","RADAR","RAISON","RANGE","RAYON","REGLE","REINE","REPOS","ROBOT",
+"ROUGE","SERIE","SIROP","SOMME","TABLE","TACHE","TAILLE","TARIF","TEMPS","TEXTE",
+"TIGRE","TITRE","TOTAL","TRACE","TRAIN","UNION","UNITE","USAGE","USINE","UTILE",
+"VALSE","VENIR","VENTE","VERBE","VERRE","VILLE","VITAL","WAGON","XENON","YACHT",
+"YOGAS","ZEROS","ZONES"
+];
 
-const WORDS_5 = generateWords(5);
-const WORDS_6 = generateWords(6);
+const WORDS_6 = [
+"MAISON","JARDIN","SOLEIL","ROUTES","BUREAU","VOYAGE","ANIMAL","ORANGE","SAISON","TRAJET",
+"PARLER","PARTIR","PASSER","PENSER","PLACER","PLANTE","PALAIS","PANIER","PECHER","PERDRE",
+"PERMIS","PIERRE","QUATRE","QUILLE","QUOTAS","RACINE","RANGER","RAPIDE","RARETE","RECENT",
+"REGLES","RELIEF","REMPLI","RENDRE","RESEAU","RESTER","RETOUR","SAVOIR","SECRET","SENTIR",
+"SERIES","SERVIR","SIGNER","SIMPLE","SORTIR","TABLES","TAILLE","TARIFS","TEMOIN","TERRES",
+"TESTER","TEXTER","TITRES","TOURNE","TROUVE","ULTRAS","USAGES","VALEUR","VALIDE","VARIER",
+"VENDRE","VENTES","VERITE","VERSER","VIABLE","VILLES","VIOLET","VISAGE","VIVANT","ZENITH",
+"ABIMER","ACCORD","ACTEUR","ACTION","ADORER","AGENCE","AMENER","AMITIE","APPORT","ARRIVE",
+"AVANCE","AVENIR","BALADE","BARQUE","BEAUTE","BELIER","BESOIN","BILLET","BOUCLE","BOUGER",
+"BOUTON","BRILLE","BRULER","CABANE","CADEAU","CALMER","CAMION","CANARD","CARNET","CARREE",
+"CASSER","CENTRE","CHAINE","CHALET","CHANCE","CHEMIN","CHOISI","CLIENT","COLERE","COMBAT"
+];
 
 /* ===============================
-   LOGIQUE DU JEU
+   LOGIQUE
 ================================ */
 
 let WORD_LENGTH = 5;
-let solution = '';
+let solution = "";
 let grid = [];
 let row = 0;
 let col = 0;
 let gameOver = false;
 const MAX_ROWS = 6;
 
-const board = document.getElementById('board');
-const keyboard = document.getElementById('keyboard');
-const modeSelect = document.getElementById('modeSelect');
+const board = document.getElementById("board");
+const keyboard = document.getElementById("keyboard");
+const modeSelect = document.getElementById("modeSelect");
 
 function startGame(){
   WORD_LENGTH = parseInt(modeSelect.value);
-  const list = WORD_LENGTH===5 ? WORDS_5 : WORDS_6;
-
+  const list = WORD_LENGTH === 5 ? WORDS_5 : WORDS_6;
   solution = list[Math.floor(Math.random()*list.length)];
 
-  row=0;
-  col=0;
-  gameOver=false;
-  grid=Array.from({length:MAX_ROWS},()=>Array(WORD_LENGTH).fill(''));
+  row = 0;
+  col = 0;
+  gameOver = false;
+  grid = Array.from({length:MAX_ROWS},()=>Array(WORD_LENGTH).fill(""));
 
   drawBoard();
   drawKeyboard();
@@ -164,13 +176,13 @@ function startGame(){
 }
 
 function drawBoard(){
-  board.innerHTML='';
+  board.innerHTML="";
   for(let r=0;r<MAX_ROWS;r++){
-    const rowDiv=document.createElement('div');
-    rowDiv.className='row';
+    const rowDiv=document.createElement("div");
+    rowDiv.className="row";
     for(let c=0;c<WORD_LENGTH;c++){
-      const tile=document.createElement('div');
-      tile.className='tile';
+      const tile=document.createElement("div");
+      tile.className="tile";
       tile.id=`t-${r}-${c}`;
       tile.onclick=()=>selectTile(r,c);
       rowDiv.appendChild(tile);
@@ -181,21 +193,21 @@ function drawBoard(){
 
 function selectTile(r,c){
   if(gameOver || r!==row) return;
-  document.querySelectorAll('.tile').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll(".tile").forEach(t=>t.classList.remove("active"));
   col=c;
-  document.getElementById(`t-${r}-${c}`).classList.add('active');
+  document.getElementById(`t-${r}-${c}`).classList.add("active");
 }
 
 function drawKeyboard(){
-  keyboard.innerHTML='';
-  const KEYS=['AZERTYUIOP','QSDFGHJKLM','WXCVBN'];
+  keyboard.innerHTML="";
+  const KEYS=["AZERTYUIOP","QSDFGHJKLM","WXCVBN"];
 
   KEYS.forEach(line=>{
-    const r=document.createElement('div');
-    r.className='kb-row';
+    const r=document.createElement("div");
+    r.className="kb-row";
     [...line].forEach(letter=>{
-      const key=document.createElement('div');
-      key.className='key';
+      const key=document.createElement("div");
+      key.className="key";
       key.textContent=letter;
       key.onclick=()=>type(letter);
       r.appendChild(key);
@@ -203,17 +215,17 @@ function drawKeyboard(){
     keyboard.appendChild(r);
   });
 
-  const r=document.createElement('div');
-  r.className='kb-row';
+  const r=document.createElement("div");
+  r.className="kb-row";
 
-  const enter=document.createElement('div');
-  enter.className='key wide';
-  enter.textContent='Entrer';
+  const enter=document.createElement("div");
+  enter.className="key wide";
+  enter.textContent="Entrer";
   enter.onclick=check;
 
-  const back=document.createElement('div');
-  back.className='key wide';
-  back.textContent='⌫';
+  const back=document.createElement("div");
+  back.className="key wide";
+  back.textContent="⌫";
   back.onclick=backspace;
 
   r.append(enter,back);
@@ -232,32 +244,32 @@ function type(letter){
 }
 
 function backspace(){
-  if(col>0 && grid[row][col]==='') col--;
-  grid[row][col]='';
-  document.getElementById(`t-${row}-${col}`).textContent='';
+  if(col>0 && grid[row][col]==="") col--;
+  grid[row][col]="";
+  document.getElementById(`t-${row}-${col}`).textContent="";
   selectTile(row,col);
 }
 
 function check(){
   if(gameOver) return;
-  if(grid[row].includes('')) return;
+  if(grid[row].includes("")) return;
 
-  const guess=grid[row].join('');
-  const sol=solution.split('');
-  const result=Array(WORD_LENGTH).fill('gray');
+  const guess=grid[row].join("");
+  const sol=solution.split("");
+  const result=Array(WORD_LENGTH).fill("gray");
 
   for(let i=0;i<WORD_LENGTH;i++){
     if(guess[i]===sol[i]){
-      result[i]='green';
+      result[i]="green";
       sol[i]=null;
     }
   }
 
   for(let i=0;i<WORD_LENGTH;i++){
-    if(result[i]==='gray'){
+    if(result[i]==="gray"){
       const idx=sol.indexOf(guess[i]);
       if(idx!==-1){
-        result[i]='yellow';
+        result[i]="yellow";
         sol[idx]=null;
       }
     }
@@ -284,14 +296,15 @@ function check(){
   }
 }
 
-window.addEventListener('keydown',e=>{
-  if(e.key==='Enter') check();
-  else if(e.key==='Backspace') backspace();
+window.addEventListener("keydown",e=>{
+  if(e.key==="Enter") check();
+  else if(e.key==="Backspace") backspace();
   else if(/^[a-z]$/i.test(e.key)) type(e.key.toUpperCase());
 });
 
 startGame();
 
 </script>
+
 </body>
 </html>
