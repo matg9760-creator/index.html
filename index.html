@@ -50,6 +50,7 @@ body{
   font-size:24px;
   font-weight:bold;
   cursor:pointer;
+  user-select:none;
 }
 
 .tile.active{
@@ -78,8 +79,12 @@ body{
   border-radius:6px;
   cursor:pointer;
   font-weight:bold;
+  user-select:none;
 }
 
+.key.green{background:var(--green);color:white}
+.key.yellow{background:var(--yellow);color:white}
+.key.gray{background:var(--gray);color:white}
 .key.wide{min-width:60px}
 </style>
 </head>
@@ -107,13 +112,15 @@ body{
 ========================= */
 
 const WORDS_5 = [
-"SALON","TABLE","PORTE","PLAGE","FLEUR","TRAIN","ARBRE","IMAGE","TERRE","CHAUD",
-"FRUIT","BRAVE","MANGE","MONDE","NAGER","ROUTE","SPORT","SABLE","VIRUS","ZEBRE"
+"SALON","TABLE","PORTE","PLAGE","FLEUR",
+"TRAIN","ARBRE","IMAGE","TERRE","CHAUD",
+"FRUIT","BRAVE","MANGE","MONDE","NAGER",
+"ROUTE","SPORT","SABLE","VIRUS","ZEBRE"
 ];
 
 const WORDS_6 = [
-"MAISON","JARDIN","SOLEIL","ROUTES","BUREAU","VOYAGE","ANIMAL","ORANGE","SAISON","TRAJET",
-"PARLER","PARTIR","PASSER","PENSER","PLACER","PLANTE","PALAIS","PANIER","PECHER","PERDRE"
+"MAISON","JARDIN","SOLEIL","ROUTES","BUREAU",
+"VOYAGE","ANIMAL","ORANGE","SAISON","TRAJET"
 ];
 
 /* =========================
@@ -133,7 +140,7 @@ const keyboard = document.getElementById("keyboard");
 const modeSelect = document.getElementById("modeSelect");
 
 /* =========================
-   DÉMARRAGE
+   START GAME
 ========================= */
 
 modeSelect.addEventListener("change", startGame);
@@ -141,7 +148,6 @@ modeSelect.addEventListener("change", startGame);
 function startGame(){
 
   WORD_LENGTH = parseInt(modeSelect.value);
-
   const list = WORD_LENGTH === 5 ? WORDS_5 : WORDS_6;
   solution = list[Math.floor(Math.random()*list.length)];
 
@@ -157,7 +163,7 @@ function startGame(){
 }
 
 /* =========================
-   GRILLE
+   BOARD
 ========================= */
 
 function drawBoard(){
@@ -184,7 +190,7 @@ function selectTile(r,c){
 }
 
 /* =========================
-   CLAVIER
+   KEYBOARD
 ========================= */
 
 function drawKeyboard(){
@@ -222,7 +228,7 @@ function drawKeyboard(){
 }
 
 /* =========================
-   LOGIQUE
+   INPUT
 ========================= */
 
 function type(letter){
@@ -243,13 +249,18 @@ function backspace(){
   selectTile(row,col);
 }
 
+/* =========================
+   CHECK WORD
+========================= */
+
 function check(){
   if(grid[row].includes("")) return;
 
-  const guess=grid[row].join("");
-  const sol=solution.split("");
-  const result=Array(WORD_LENGTH).fill("gray");
+  const guess = grid[row].join("");
+  const sol = solution.split("");
+  const result = Array(WORD_LENGTH).fill("gray");
 
+  // GREEN PASS
   for(let i=0;i<WORD_LENGTH;i++){
     if(guess[i]===sol[i]){
       result[i]="green";
@@ -257,6 +268,7 @@ function check(){
     }
   }
 
+  // YELLOW PASS
   for(let i=0;i<WORD_LENGTH;i++){
     if(result[i]==="gray"){
       const idx=sol.indexOf(guess[i]);
@@ -267,13 +279,16 @@ function check(){
     }
   }
 
+  // APPLY COLORS
   for(let i=0;i<WORD_LENGTH;i++){
-    document.getElementById(`t-${row}-${i}`).classList.add(result[i]);
+    const tile=document.getElementById(`t-${row}-${i}`);
+    tile.classList.add(result[i]);
+    colorKey(guess[i],result[i]);
   }
 
   if(guess===solution){
     gameOver=true;
-    setTimeout(()=>alert("Bravo !"),200);
+    setTimeout(()=>alert("Bravo ! 🎉"),200);
     return;
   }
 
@@ -287,6 +302,32 @@ function check(){
     selectTile(row,0);
   }
 }
+
+/* =========================
+   COLOR KEYBOARD
+========================= */
+
+function colorKey(letter,color){
+  document.querySelectorAll(".key").forEach(key=>{
+    if(key.textContent!==letter) return;
+
+    if(color==="green"){
+      key.className="key green";
+    }
+    else if(color==="yellow" && !key.classList.contains("green")){
+      key.className="key yellow";
+    }
+    else if(color==="gray"
+      && !key.classList.contains("green")
+      && !key.classList.contains("yellow")){
+      key.className="key gray";
+    }
+  });
+}
+
+/* =========================
+   PHYSICAL KEYBOARD
+========================= */
 
 window.addEventListener("keydown",e=>{
   if(e.key==="Enter") check();
