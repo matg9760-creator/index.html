@@ -17,7 +17,7 @@ body{
   font-family:Arial, sans-serif;
   display:flex;
   justify-content:center;
-  background:white;
+  background:#ffffff;
 }
 
 .app{
@@ -49,6 +49,13 @@ body{
   justify-content:center;
   font-size:28px;
   font-weight:bold;
+  cursor:pointer;
+  user-select:none;
+}
+
+.tile.active{
+  border-color:#5383ff;
+  box-shadow:0 0 0 2px rgba(83,131,255,.4) inset;
 }
 
 .tile.green{background:var(--green);color:white;border-color:var(--green)}
@@ -72,9 +79,13 @@ body{
   border-radius:6px;
   cursor:pointer;
   font-weight:bold;
+  user-select:none;
 }
 
-.key.wide{min-width:60px;}
+.key.green{background:var(--green);color:white}
+.key.yellow{background:var(--yellow);color:white}
+.key.gray{background:var(--gray);color:white}
+.key.wide{min-width:60px}
 </style>
 </head>
 
@@ -93,7 +104,7 @@ body{
 <script>
 
 /* ==========================
-   DICTIONNAIRE FIABLE 5L
+   DICTIONNAIRE STABLE
 ========================== */
 
 const WORDS = [
@@ -123,6 +134,7 @@ function startGame(){
   grid = Array.from({length:MAX_ROWS},()=>Array(WORD_LENGTH).fill(''));
   drawBoard();
   drawKeyboard();
+  selectTile(0,0);
 }
 
 function drawBoard(){
@@ -134,10 +146,18 @@ function drawBoard(){
       const tile=document.createElement('div');
       tile.className='tile';
       tile.id=`t-${r}-${c}`;
+      tile.onclick=()=>selectTile(r,c);
       rowDiv.appendChild(tile);
     }
     board.appendChild(rowDiv);
   }
+}
+
+function selectTile(r,c){
+  if(gameOver || r!==row) return;
+  document.querySelectorAll('.tile').forEach(t=>t.classList.remove('active'));
+  col = c;
+  document.getElementById(`t-${r}-${c}`).classList.add('active');
 }
 
 function drawKeyboard(){
@@ -178,14 +198,23 @@ function type(letter){
   if(gameOver || col>=WORD_LENGTH) return;
   grid[row][col]=letter;
   document.getElementById(`t-${row}-${col}`).textContent=letter;
-  col++;
+
+  if(col < WORD_LENGTH-1){
+    col++;
+    selectTile(row,col);
+  }
 }
 
 function backspace(){
-  if(col===0) return;
-  col--;
+  if(col<0) return;
+
+  if(grid[row][col]==='' && col>0){
+    col--;
+  }
+
   grid[row][col]='';
   document.getElementById(`t-${row}-${col}`).textContent='';
+  selectTile(row,col);
 }
 
 function check(){
@@ -196,7 +225,7 @@ function check(){
   const sol = solution.split('');
   const result = Array(WORD_LENGTH).fill('gray');
 
-  // VERT
+  // PASSAGE VERT
   for(let i=0;i<WORD_LENGTH;i++){
     if(guess[i]===sol[i]){
       result[i]='green';
@@ -204,10 +233,10 @@ function check(){
     }
   }
 
-  // JAUNE
+  // PASSAGE JAUNE
   for(let i=0;i<WORD_LENGTH;i++){
     if(result[i]==='gray'){
-      const idx=sol.indexOf(guess[i]);
+      const idx = sol.indexOf(guess[i]);
       if(idx!==-1){
         result[i]='yellow';
         sol[idx]=null;
@@ -216,12 +245,13 @@ function check(){
   }
 
   for(let i=0;i<WORD_LENGTH;i++){
-    document.getElementById(`t-${row}-${i}`).classList.add(result[i]);
+    const tile=document.getElementById(`t-${row}-${i}`);
+    tile.classList.add(result[i]);
   }
 
   if(guess===solution){
     gameOver=true;
-    setTimeout(()=>alert("Bravo !"),200);
+    setTimeout(()=>alert("Bravo ! 🎉"),200);
     return;
   }
 
@@ -231,6 +261,8 @@ function check(){
   if(row===MAX_ROWS){
     gameOver=true;
     setTimeout(()=>alert("Perdu ! Mot : "+solution),200);
+  } else {
+    selectTile(row,0);
   }
 }
 
@@ -243,5 +275,6 @@ window.addEventListener('keydown',e=>{
 startGame();
 
 </script>
+
 </body>
 </html>
