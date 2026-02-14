@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Wordle FR</title>
+<title>Wordle FR Stable</title>
 
 <style>
 :root{
@@ -20,23 +20,52 @@ body{
   background:white;
 }
 
-.app{max-width:520px;width:100%;padding:20px;text-align:center;}
+.app{
+  max-width:500px;
+  width:100%;
+  padding:20px;
+  text-align:center;
+}
 
-.board{display:flex;flex-direction:column;gap:6px;margin-top:20px;align-items:center}
-.row{display:flex;gap:6px}
+.board{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  margin-top:20px;
+  align-items:center;
+}
+
+.row{
+  display:flex;
+  gap:6px;
+}
+
 .tile{
-  width:60px;height:60px;
+  width:60px;
+  height:60px;
   border:2px solid #d3d6da;
-  display:flex;align-items:center;justify-content:center;
-  font-size:28px;font-weight:bold;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:28px;
+  font-weight:bold;
 }
 
 .tile.green{background:var(--green);color:white;border-color:var(--green)}
 .tile.yellow{background:var(--yellow);color:white;border-color:var(--yellow)}
 .tile.gray{background:var(--gray);color:white;border-color:var(--gray)}
 
-.keyboard{margin-top:20px}
-.kb-row{display:flex;justify-content:center;gap:5px;margin-bottom:6px}
+.keyboard{
+  margin-top:20px;
+}
+
+.kb-row{
+  display:flex;
+  justify-content:center;
+  gap:5px;
+  margin-bottom:6px;
+}
+
 .key{
   padding:10px 12px;
   background:#d3d6da;
@@ -44,24 +73,17 @@ body{
   cursor:pointer;
   font-weight:bold;
 }
-.key.green{background:var(--green);color:white}
-.key.yellow{background:var(--yellow);color:white}
-.key.gray{background:var(--gray);color:white}
-.key.wide{min-width:60px}
+
+.key.wide{min-width:60px;}
 </style>
 </head>
 
 <body>
+
 <div class="app">
 
 <h1>WORDLE</h1>
-
-<select id="modeSelect">
-<option value="5">5 lettres</option>
-<option value="6">6 lettres</option>
-</select>
-
-<button onclick="startGame()">Jouer</button>
+<button onclick="startGame()">Nouvelle partie</button>
 
 <div id="board" class="board"></div>
 <div id="keyboard" class="keyboard"></div>
@@ -70,72 +92,31 @@ body{
 
 <script>
 
-/* ======================
-   DICTIONNAIRES PROPRES
-====================== */
+/* ==========================
+   DICTIONNAIRE FIABLE 5L
+========================== */
 
-const WORDS_5 = [
-'ARBRE','AVION','BANAL','BARBE','BLANC','BOITE','BONUS','BRAVE','BRUIT','CABLE',
-'CALME','CANAL','CARRE','CAUSE','CHAUD','CIBLE','CLAIR','CLONE','COEUR','CORDE',
-'DANSE','DEBUT','DELTA','DESIR','DOIGT','DONNE','DOUTE','DROIT','ECRAN','ELITE',
-'EMAIL','ENFER','ENTRE','ESSAI','ETAPE','ETUDE','EXTRA','FAIRE','FEMME','FERME',
-'FINAL','FLEUR','FORCE','FRUIT','GAGNE','GARDE','GENRE','GLOBE','GRAND','GUIDE',
-'HABIT','HIVER','HOMME','HOTEL','IMAGE','INDEX','JETER','JEUNE','JOUER','KARMA',
-'KAYAK','LAMPE','LARGE','LASER','LEGAL','LIVRE','LOGER','MAGIE','MAIRE','MANGE',
-'MARIN','MASSE','MATCH','MERCI','METRE','MONDE','MOTIF','NAGER','NATIF','NAVAL',
-'NERVE','NOBLE','NOIRE','NOMME','NORME','NUAGE','OASIS','OBJET','ODEUR','OFFRE',
-'OMBRE','OPERA','ORAGE','ORDRE','ORGUE','OUVRE','PANNE','PARLE','PARTI','PECHE',
-'PENSE','PHOTO','PLAGE','PLUIE','QUART','QUEUE','RADAR','RAISON','RANGE','RAYON',
-'REGLE','REINE','REPOS','ROBOT','ROUGE','ROUTE','SABLE','SALON','SCENE','SCORE',
-'SERIE','SIROP','SOMME','SPORT','TABLE','TACHE','TAILLE','TARIF','TEMPS','TEXTE',
-'TIGRE','TITRE','TOTAL','TRACE','TRAIN','UNION','UNITE','USAGE','USINE','UTILE',
-'VALSE','VENIR','VENTE','VERBE','VERRE','VILLE','VIRUS','VITAL','WAGON','XENON',
-'YACHT','YOGAS','ZEBRE','ZEROS','ZONES'
+const WORDS = [
+'SALON','TABLE','PORTE','PLAGE','FLEUR',
+'TRAIN','ARBRE','IMAGE','TERRE','CHAUD',
+'FRUIT','BRAVE','MANGE','MONDE','NAGER',
+'ROUTE','SPORT','SABLE','VIRUS','ZEBRE'
 ];
 
-const WORDS_6 = [
-'ABIMER','ACCORD','ACTEUR','ACTION','ADORER','AGENCE','AMENER','AMITIE','ANIMAL','APPORT',
-'ARRIVE','AVANCE','AVENIR','BALADE','BARQUE','BEAUTE','BELIER','BESOIN','BILLET','BOUCLE',
-'BOUGER','BOUTON','BRILLE','BRULER','BUREAU','CABANE','CADEAU','CALMER','CAMION','CANARD',
-'CARNET','CARREE','CASSER','CENTRE','CHAINE','CHALET','CHANCE','CHEMIN','CHOISI','CLIENT',
-'COLERE','COMBAT','COMPTE','CONFIE','CORAIL','COUPER','COURSE','CREUSE','CROIRE','DANGER',
-'DEMAIN','DEPART','DESERT','DESIRE','DEVOIR','DONNER','DOUCHE','DOUTER','DURANT','ECOLES',
-'ECRIRE','EFFORT','EGLISE','ELEVEE','EMPIRE','ENCORE','ENTRER','ENVERS','FACILE','FERMER',
-'FIGURE','FILMER','FINALE','FLECHE','FORCER','FORMER','FRANCE','GAGNER','GARDER','GENIAL',
-'GLOBAL','GOUTER','GRANDI','GRAVIR','GUIDER','HABILE','HAZARD','HEURES','HUMAIN','IDEALE',
-'IMPACT','IMPORT','INDICE','INVITE','JARDIN','JASMIN','JOUETS','KARATE','LANCER','LIGNES',
-'LIVREE','LONGER','MAISON','MANQUE','MARCHE','MARQUE','MASQUE','MEDIAN','MENTAL','MERITE',
-'MESURE','MOBILE','MODELE','MONTEE','NATION','NATURE','NAVIRE','NEIGES','NIVEAU','NOMBRE',
-'NOTION','NOUVEL','NUANCE','OBJETS','OBLIGE','OFFRIR','OISEAU','OPPOSE','ORAGEE','ORDRES',
-'OUVERT','PALAIS','PANIER','PARLER','PARTIR','PASSER','PATINE','PECHER','PENSER','PERDRE',
-'PERMIS','PIERRE','PLACER','PLANTE','QUATRE','QUILLE','QUOTAS','RACINE','RANGER','RAPIDE',
-'RARETE','RECENT','REGLES','RELIEF','REMPLI','RENDRE','RESEAU','RESTER','RETOUR','SAISON',
-'SAVOIR','SECRET','SENTIR','SERIES','SERVIR','SIGNER','SIMPLE','SORTIR','TABLES','TAILLE',
-'TARIFS','TEMOIN','TERRES','TESTER','TEXTER','TITRES','TOURNE','TRAJET','TROUVE','ULTRAS',
-'USAGES','VALEUR','VALIDE','VARIER','VENDRE','VENTES','VERITE','VERSER','VIABLE','VILLES',
-'VIOLET','VISAGE','VIVANT','WAGONS','XENONS','YACHTS','ZENITH','ZODIAC'
-];
+const WORD_LENGTH = 5;
+const MAX_ROWS = 6;
 
-/* ======================
-   LOGIQUE DU JEU
-====================== */
-
-let WORD_LENGTH = 5;
 let solution = '';
 let grid = [];
 let row = 0;
 let col = 0;
 let gameOver = false;
-const MAX_ROWS = 6;
 
 const board = document.getElementById('board');
 const keyboard = document.getElementById('keyboard');
-const modeSelect = document.getElementById('modeSelect');
 
 function startGame(){
-  WORD_LENGTH = parseInt(modeSelect.value);
-  const list = WORD_LENGTH === 5 ? WORDS_5 : WORDS_6;
-  solution = list[Math.floor(Math.random()*list.length)];
+  solution = WORDS[Math.floor(Math.random()*WORDS.length)];
   row = 0;
   col = 0;
   gameOver = false;
@@ -162,15 +143,16 @@ function drawBoard(){
 function drawKeyboard(){
   keyboard.innerHTML='';
   const KEYS=['AZERTYUIOP','QSDFGHJKLM','WXCVBN'];
+
   KEYS.forEach(line=>{
     const r=document.createElement('div');
     r.className='kb-row';
-    [...line].forEach(l=>{
-      const k=document.createElement('div');
-      k.className='key';
-      k.textContent=l;
-      k.onclick=()=>type(l);
-      r.appendChild(k);
+    [...line].forEach(letter=>{
+      const key=document.createElement('div');
+      key.className='key';
+      key.textContent=letter;
+      key.onclick=()=>type(letter);
+      r.appendChild(key);
     });
     keyboard.appendChild(r);
   });
@@ -210,10 +192,11 @@ function check(){
   if(gameOver) return;
   if(grid[row].includes('')) return;
 
-  const guess=grid[row].join('');
-  const sol=solution.split('');
-  const result=Array(WORD_LENGTH).fill('gray');
+  const guess = grid[row].join('');
+  const sol = solution.split('');
+  const result = Array(WORD_LENGTH).fill('gray');
 
+  // VERT
   for(let i=0;i<WORD_LENGTH;i++){
     if(guess[i]===sol[i]){
       result[i]='green';
@@ -221,6 +204,7 @@ function check(){
     }
   }
 
+  // JAUNE
   for(let i=0;i<WORD_LENGTH;i++){
     if(result[i]==='gray'){
       const idx=sol.indexOf(guess[i]);
@@ -232,8 +216,7 @@ function check(){
   }
 
   for(let i=0;i<WORD_LENGTH;i++){
-    const tile=document.getElementById(`t-${row}-${i}`);
-    tile.className='tile '+result[i];
+    document.getElementById(`t-${row}-${i}`).classList.add(result[i]);
   }
 
   if(guess===solution){
