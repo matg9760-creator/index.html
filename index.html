@@ -5,12 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Wordle FR – Clone fidèle</title>
 
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Wordle FR">
-<link rel="apple-touch-icon" href="icon-512.png">
-<meta name="theme-color" content="#ffffff">
-
 <style>
 :root{
   --bg:#ffffff;
@@ -25,47 +19,43 @@
 body{
   margin:0;
   background:var(--bg);
-  color:var(--text);
   font-family:system-ui,Arial,sans-serif;
   display:flex;
   justify-content:center;
 }
 
-.app{width:100%;max-width:520px;padding:18px}
+.app{width:100%;max-width:520px;padding:20px}
 header{text-align:center}
 
-.board{display:flex;flex-direction:column;gap:6px;align-items:center;margin-top:12px}
+.board{display:flex;flex-direction:column;gap:6px;align-items:center;margin-top:15px}
 .row{display:flex;gap:6px}
 
 .tile{
-  width:64px;height:64px;
+  width:60px;height:60px;
   border:2px solid var(--border);
-  background:var(--tile);
   display:flex;align-items:center;justify-content:center;
-  font-size:32px;font-weight:bold;
-  user-select:none;cursor:pointer;
+  font-size:28px;font-weight:bold;
 }
-.tile.active{border-color:#5383ff;box-shadow:0 0 0 2px rgba(83,131,255,.35) inset}
-.tile.green{background:var(--green);border-color:var(--green);color:#fff}
-.tile.yellow{background:var(--yellow);border-color:var(--yellow);color:#fff}
-.tile.gray{background:var(--gray);border-color:var(--gray);color:#fff}
 
-.keyboard{margin-top:18px}
+.tile.green{background:var(--green);color:#fff;border-color:var(--green)}
+.tile.yellow{background:var(--yellow);color:#fff;border-color:var(--yellow)}
+.tile.gray{background:var(--gray);color:#fff;border-color:var(--gray)}
+
+.keyboard{margin-top:20px}
 .kb-row{display:flex;justify-content:center;gap:5px;margin-bottom:6px}
 .key{
-  background:#d3d6da;color:#111;
-  padding:12px 14px;border-radius:6px;
-  font-weight:bold;cursor:pointer;
-  min-width:34px;text-align:center;font-size:15px
+  background:#d3d6da;
+  padding:10px 12px;
+  border-radius:6px;
+  font-weight:bold;
+  cursor:pointer;
+  min-width:32px;
+  text-align:center;
 }
-.key.wide{min-width:64px}
 .key.green{background:var(--green);color:#fff}
 .key.yellow{background:var(--yellow);color:#fff}
-.key.gray{background:#787c7e;color:#fff}
-
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.75);display:none;align-items:center;justify-content:center}
-.modal-content{background:#1f1f21;padding:22px;border-radius:16px;text-align:center}
-.stat{font-size:22px;font-weight:bold}
+.key.gray{background:var(--gray);color:#fff}
+.key.wide{min-width:60px}
 </style>
 </head>
 
@@ -73,88 +63,30 @@ header{text-align:center}
 <div class="app">
 <header>
 <h1>WORDLE</h1>
-
-<label>Mode :</label>
 <select id="modeSelect">
-  <option value="5">5 lettres</option>
-  <option value="6">6 lettres</option>
+<option value="5">5 lettres</option>
+<option value="6">6 lettres</option>
 </select>
-
-<button id="startBtn">Jouer</button>
-<button id="statsBtn">Stats</button>
+<button onclick="startGame()">Jouer</button>
 </header>
 
 <div id="board"></div>
 <div id="keyboard" class="keyboard"></div>
-
-<div id="statsModal" class="modal">
-  <div class="modal-content">
-    <p>Parties : <span id="statPlayed" class="stat">0</span></p>
-    <p>Victoires : <span id="statWins" class="stat">0</span></p>
-    <p>Série : <span id="statStreak" class="stat">0</span></p>
-    <button onclick="closeStats()">Fermer</button>
-  </div>
-</div>
 </div>
 
 <script>
 
-/* ============================
-   NOUVEAUX DICTIONNAIRES A→Z
-============================ */
+/* =======================
+   DICTIONNAIRES A→Z
+======================= */
 
-const WORDS_5 = [
-'ABIME','ACIER','ACTIF','ADORE','AIGLE','AIMER','ALBUM','AMOUR','ANGLE','ARBRE',
-'AVION','BALAI','BANAL','BARBE','BATEA','BEIGE','BELLE','BIENS','BLANC','BOIRE',
-'BOITE','BONUS','BOULE','BRAVE','BRUIT','CABLE','CADRE','CALME','CANAL','CARRE',
-'CAUSE','CHAUD','CIBLE','CLAIR','CLONE','COEUR','CORDE','CORPS','DANSE','DEBUT',
-'DELTA','DESIR','DETTE','DOIGT','DONNE','DOUTE','DROIT','DURER','ECRAN','EFFET',
-'ELITE','EMAIL','ENFER','ENTRE','EPAIS','ESSAI','ETAGE','ETAPE','ETUDE','EXTRA',
-'FACON','FAIRE','FAUTE','FEMME','FERME','FIBRE','FICHE','FINAL','FIXER','FLEUR',
-'FONCE','FORCE','FRAIS','FRUIT','FUSIL','GAGNE','GARDE','GENRE','GLOBE','GOUTE',
-'GRACE','GRADE','GRAIN','GRAND','GRAVE','GREVE','GUIDE','HABIT','HAUTE','HIVER',
-'HOMME','HOTEL','HUILE','IDEAL','IMAGE','INDEX','JETER','JEUNE','JOUER','JOURS',
-'KARMA','KAYAK','KIOSK','KOALA','LAMPE','LARGE','LASER','LEGAL','LIVRE','LOGER',
-'LOUPE','MAGIE','MAINS','MAIRE','MANGE','MARIN','MASSE','MATCH','MERCI','METRE',
-'MONDE','MORAL','MOTIF','MOULE','NAGER','NATIF','NAVAL','NERVE','NOBLE','NOIRE',
-'NOMME','NORME','NOTER','NUAGE','OASIS','OBJET','ODEUR','OFFRE','OMBRE','OPERA',
-'ORAGE','ORDRE','ORGUE','OUVRE','PAIRE','PANNE','PARLE','PARTI','PAUSE','PECHE',
-'PEINT','PENSE','PERDU','PHOTO','PIECE','PLAGE','PLUIE','QUAIS','QUART','QUETE',
-'QUEUE','RADAR','RAISON','RANGE','RAYON','REGLE','REINE','REPOS','ROBOT','ROUGE',
-'ROUTE','SABLE','SALON','SAUTE','SCENE','SCORE','SERIE','SIROP','SOMME','SONDE',
-'SPORT','TABLE','TACHE','TAILLE','TARIF','TEMPS','TEXTE','THEME','TIGRE','TITRE',
-'TOTAL','TRACE','TRAIN','UNION','UNITE','USAGE','USINE','UTILE','VALSE','VASTE',
-'VENIR','VENTE','VERBE','VERRE','VILLE','VIRUS','VITAL','WAGON','WATTS','XENON',
-'YACHT','YOGAS','ZEBRE','ZEROS','ZONES'
-];
+const WORDS_5 = ['ARBRE','AVION','BANAL','BARBE','BLANC','BOITE','BONUS','BRAVE','BRUIT','CABLE','CALME','CANAL','CARRE','CAUSE','CHAUD','CIBLE','CLAIR','CLONE','COEUR','CORDE','DANSE','DEBUT','DELTA','DESIR','DOIGT','DONNE','DOUTE','DROIT','ECRAN','ELITE','EMAIL','ENFER','ENTRE','ESSAI','ETAPE','ETUDE','EXTRA','FAIRE','FEMME','FERME','FINAL','FLEUR','FORCE','FRUIT','GAGNE','GARDE','GENRE','GLOBE','GRAND','GUIDE','HABIT','HIVER','HOMME','HOTEL','IMAGE','INDEX','JETER','JEUNE','JOUER','KARMA','KAYAK','LAMPE','LARGE','LASER','LEGAL','LIVRE','LOGER','MAGIE','MAIRE','MANGE','MARIN','MASSE','MATCH','MERCI','METRE','MONDE','MOTIF','NAGER','NATIF','NAVAL','NERVE','NOBLE','NOIRE','NOMME','NORME','NUAGE','OASIS','OBJET','ODEUR','OFFRE','OMBRE','OPERA','ORAGE','ORDRE','ORGUE','OUVRE','PANNE','PARLE','PARTI','PECHE','PENSE','PHOTO','PLAGE','PLUIE','QUART','QUEUE','RADAR','RAISON','RANGE','RAYON','REGLE','REINE','REPOS','ROBOT','ROUGE','ROUTE','SABLE','SALON','SCENE','SCORE','SERIE','SIROP','SOMME','SPORT','TABLE','TACHE','TAILLE','TARIF','TEMPS','TEXTE','TIGRE','TITRE','TOTAL','TRACE','TRAIN','UNION','UNITE','USAGE','USINE','UTILE','VALSE','VENIR','VENTE','VERBE','VERRE','VILLE','VIRUS','VITAL','WAGON','XENON','YACHT','YOGAS','ZEBRE','ZEROS','ZONES'];
 
-const WORDS_6 = [
-'ABIMER','ACCORD','ACTEUR','ACTION','ADOPTE','ADORER','AGENCE','AMENER','AMITIE','ANIMAL',
-'APPORT','ARRIVE','AVANCE','AVENIR','BALADE','BARQUE','BEAUTE','BELIER','BESOIN','BILLET',
-'BOUCLE','BOUGER','BOUTON','BRILLE','BRULER','BUREAU','CABANE','CADEAU','CALMER','CAMION',
-'CANARD','CARNET','CARREE','CASSER','CENTRE','CHAINE','CHALET','CHANCE','CHEMIN','CHOISI',
-'CLIENT','COLERE','COMBAT','COMPTE','CONFIE','CORAIL','COUPER','COURSE','CREUSE','CROIRE',
-'DANGER','DEMAIN','DEPART','DESERT','DESIRE','DEVOIR','DONNER','DOUCHE','DOUTER','DURANT',
-'ECOLES','ECRIRE','EFFORT','EGLISE','ELEVEE','EMPIRE','ENCORE','ENTRER','ENVERS','FACILE',
-'FAMEUX','FAMILI','FERMER','FIGURE','FILMER','FINALE','FLECHE','FLORAL','FORCER','FORMER',
-'FRANCE','GAGNER','GARDER','GENIAL','GLOBAL','GOUTER','GRANDI','GRAVIR','GUIDER','HABILE',
-'HAZARD','HEURES','HUMAIN','IDEALE','IMPACT','IMPORT','INDICE','INVITE','JARDIN','JASMIN',
-'JOUETS','KARATE','LANCER','LECTEU','LIGNES','LIVREE','LONGER','MAISON','MANQUE','MARCHE',
-'MARQUE','MASQUE','MEDIAN','MENTAL','MERITE','MESURE','MOBILE','MODELE','MONTEE','NATION',
-'NATURE','NAVIRE','NEIGES','NIVEAU','NOMBRE','NOTION','NOUVEL','NUANCE','OBJETS','OBLIGE',
-'OFFRIR','OISEAU','OPPOSE','ORAGEE','ORDRES','OUVERT','PALAIS','PANIER','PARLER','PARTIR',
-'PASSER','PATINE','PECHER','PENSER','PERDRE','PERMIS','PIERRE','PLACER','PLANTE','QUATRE',
-'QUILLE','QUOTAS','RACINE','RANGER','RAPIDE','RARETE','RECENT','REGLES','RELIEF','REMPLI',
-'RENDRE','RESEAU','RESTER','RETOUR','SABLER','SAISON','SAVOIR','SECRET','SENTIR','SERIES',
-'SERVIR','SIGNER','SIMPLE','SORTIR','TABLES','TAILLE','TARIFS','TEMOIN','TERRES','TESTER',
-'TEXTER','TITRES','TOURNE','TRAJET','TROUVE','ULTRAS','USAGES','UTILER','VALEUR','VALIDE',
-'VARIER','VENDRE','VENTES','VERITE','VERSER','VIABLE','VILLES','VIOLET','VISAGE','VIVANT',
-'WAGONS','XENONS','YACHTS','ZENITH','ZODIAC'
-];
+const WORDS_6 = ['ABIMER','ACCORD','ACTEUR','ACTION','ADORER','AGENCE','AMENER','AMITIE','ANIMAL','APPORT','ARRIVE','AVANCE','AVENIR','BALADE','BARQUE','BEAUTE','BELIER','BESOIN','BILLET','BOUCLE','BOUGER','BOUTON','BRILLE','BRULER','BUREAU','CABANE','CADEAU','CALMER','CAMION','CANARD','CARNET','CARREE','CASSER','CENTRE','CHAINE','CHALET','CHANCE','CHEMIN','CHOISI','CLIENT','COLERE','COMBAT','COMPTE','CONFIE','CORAIL','COUPER','COURSE','CREUSE','CROIRE','DANGER','DEMAIN','DEPART','DESERT','DESIRE','DEVOIR','DONNER','DOUCHE','DOUTER','DURANT','ECOLES','ECRIRE','EFFORT','EGLISE','ELEVEE','EMPIRE','ENCORE','ENTRER','ENVERS','FACILE','FAMEUX','FERMER','FIGURE','FILMER','FINALE','FLECHE','FORCER','FORMER','FRANCE','GAGNER','GARDER','GENIAL','GLOBAL','GOUTER','GRANDI','GRAVIR','GUIDER','HABILE','HAZARD','HEURES','HUMAIN','IDEALE','IMPACT','IMPORT','INDICE','INVITE','JARDIN','JASMIN','JOUETS','KARATE','LANCER','LECTEU','LIGNES','LIVREE','LONGER','MAISON','MANQUE','MARCHE','MARQUE','MASQUE','MEDIAN','MENTAL','MERITE','MESURE','MOBILE','MODELE','MONTEE','NATION','NATURE','NAVIRE','NEIGES','NIVEAU','NOMBRE','NOTION','NOUVEL','NUANCE','OBJETS','OBLIGE','OFFRIR','OISEAU','OPPOSE','ORAGEE','ORDRES','OUVERT','PALAIS','PANIER','PARLER','PARTIR','PASSER','PATINE','PECHER','PENSER','PERDRE','PERMIS','PIERRE','PLACER','PLANTE','QUATRE','QUILLE','QUOTAS','RACINE','RANGER','RAPIDE','RARETE','RECENT','REGLES','RELIEF','REMPLI','RENDRE','RESEAU','RESTER','RETOUR','SAISON','SAVOIR','SECRET','SENTIR','SERIES','SERVIR','SIGNER','SIMPLE','SORTIR','TABLES','TAILLE','TARIFS','TEMOIN','TERRES','TESTER','TEXTER','TITRES','TOURNE','TRAJET','TROUVE','ULTRAS','USAGES','VALEUR','VALIDE','VARIER','VENDRE','VENTES','VERITE','VERSER','VIABLE','VILLES','VIOLET','VISAGE','VIVANT','WAGONS','XENONS','YACHTS','ZENITH','ZODIAC'];
 
-/* ============================
-   LOGIQUE DU JEU
-============================ */
+/* =======================
+   LOGIQUE WORDLE
+======================= */
 
 let WORD_LENGTH = 5;
 let solution = '';
@@ -172,25 +104,22 @@ function startGame(){
   WORD_LENGTH = parseInt(modeSelect.value);
   const list = WORD_LENGTH === 5 ? WORDS_5 : WORDS_6;
   solution = list[Math.floor(Math.random()*list.length)];
-
   row = 0; col = 0; gameOver = false;
   grid = Array.from({length:MAX_ROWS},()=>Array(WORD_LENGTH).fill(''));
-
   drawBoard();
   drawKeyboard();
 }
 
 function drawBoard(){
   board.innerHTML='';
-  board.className='board';
   for(let r=0;r<MAX_ROWS;r++){
     const rowDiv=document.createElement('div');
     rowDiv.className='row';
     for(let c=0;c<WORD_LENGTH;c++){
-      const t=document.createElement('div');
-      t.className='tile';
-      t.id=`t-${r}-${c}`;
-      rowDiv.appendChild(t);
+      const tile=document.createElement('div');
+      tile.className='tile';
+      tile.id=`t-${r}-${c}`;
+      rowDiv.appendChild(tile);
     }
     board.appendChild(rowDiv);
   }
@@ -210,6 +139,11 @@ function drawKeyboard(){
     });
     keyboard.appendChild(r);
   });
+  const r=document.createElement('div'); r.className='kb-row';
+  const enter=document.createElement('div'); enter.className='key wide'; enter.textContent='Entrer'; enter.onclick=check;
+  const back=document.createElement('div'); back.className='key wide'; back.textContent='⌫'; back.onclick=backspace;
+  r.append(enter,back);
+  keyboard.appendChild(r);
 }
 
 function type(letter){
@@ -219,11 +153,72 @@ function type(letter){
   col++;
 }
 
-document.addEventListener('keydown',e=>{
-  if(/^[a-z]$/i.test(e.key)) type(e.key.toUpperCase());
+function backspace(){
+  if(col===0) return;
+  col--;
+  grid[row][col]='';
+  document.getElementById(`t-${row}-${col}`).textContent='';
+}
+
+function check(){
+  if(grid[row].includes('')) return;
+
+  const guess=grid[row].join('');
+  const sol=solution.split('');
+  const result=Array(WORD_LENGTH).fill('gray');
+
+  for(let i=0;i<WORD_LENGTH;i++){
+    if(guess[i]===sol[i]){
+      result[i]='green';
+      sol[i]=null;
+    }
+  }
+
+  for(let i=0;i<WORD_LENGTH;i++){
+    if(result[i]==='gray'){
+      const idx=sol.indexOf(guess[i]);
+      if(idx!==-1){
+        result[i]='yellow';
+        sol[idx]=null;
+      }
+    }
+  }
+
+  for(let i=0;i<WORD_LENGTH;i++){
+    const tile=document.getElementById(`t-${row}-${i}`);
+    tile.className='tile '+result[i];
+    colorKey(guess[i],result[i]);
+  }
+
+  if(guess===solution){
+    gameOver=true;
+    alert("Bravo !");
+    return;
+  }
+
+  row++;
+  col=0;
+  if(row===MAX_ROWS){
+    gameOver=true;
+    alert("Perdu ! Mot : "+solution);
+  }
+}
+
+function colorKey(letter,color){
+  document.querySelectorAll('.key').forEach(k=>{
+    if(k.textContent!==letter) return;
+    if(color==='green') k.className='key green';
+    else if(color==='yellow' && !k.classList.contains('green')) k.className='key yellow';
+    else if(color==='gray' && !k.classList.contains('green') && !k.classList.contains('yellow')) k.className='key gray';
+  });
+}
+
+window.addEventListener('keydown',e=>{
+  if(e.key==='Enter') check();
+  else if(e.key==='Backspace') backspace();
+  else if(/^[a-z]$/i.test(e.key)) type(e.key.toUpperCase());
 });
 
-document.getElementById('startBtn').onclick=startGame;
 startGame();
 
 </script>
