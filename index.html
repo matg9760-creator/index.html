@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Wordle FR Stable</title>
+<title>Wordle FR</title>
 
 <style>
 :root{
@@ -50,7 +50,6 @@ body{
   font-size:24px;
   font-weight:bold;
   cursor:pointer;
-  user-select:none;
 }
 
 .tile.active{
@@ -107,14 +106,72 @@ body{
 <script>
 
 /* =========================
-   DICTIONNAIRES
+   DICTIONNAIRES 200+ MOTS
 ========================= */
 
-const WORDS_5 = ["SALON","TABLE","PORTE","PLAGE","FLEUR","TRAIN","ARBRE","IMAGE","TERRE","CHAUD"];
-const WORDS_6 = ["MAISON","JARDIN","SOLEIL","ROUTES","BUREAU","VOYAGE","ANIMAL","ORANGE","SAISON","TRAJET"];
+const WORDS_5 = [
+"ABIME","ABORD","ACIER","ACTIF","ADORE","AGILE","AIGLE","AIMER","ALBUM","ALTER",
+"AMOUR","ANGLE","ANIME","ANNEE","ARBRE","ARGOT","AROME","ASILE","ATOME","AUDIO",
+"AUTRE","AVION","BALAI","BANAL","BARBE","BARON","BASER","BEIGE","BELLE","BIENS",
+"BLANC","BLEUE","BOIRE","BOITE","BONUS","BORNE","BOULE","BRAVE","BRISE","BRUIT",
+"BRUME","CABLE","CADRE","CALME","CANAL","CANON","CARRE","CAUSE","CEDER","CERNE",
+"CHAIR","CHANT","CHAUD","CIBLE","CLAIR","CLONE","COEUR","COINS","COLLE","COMME",
+"CORDE","CORPS","COULE","COURS","CRANE","CREER","CRIER","CROIX","CYCLE","DANSE",
+"DEBUT","DECOR","DELTA","DENSE","DESIR","DETTE","DEVIN","DOIGT","DONNE","DOUTE",
+"DROIT","DURER","ECRAN","EFFET","ELITE","EMAIL","ENFER","ENFIN","ENJEU","ENTRE",
+"ENVOI","EPAIS","EPOUX","ESSAI","ETAGE","ETANG","ETAPE","ETOIL","ETUDE","EXACT",
+"EXILE","EXTRA","FACON","FAIRE","FAUTE","FEMME","FERME","FIBRE","FICHE","FINAL",
+"FIXER","FLAIR","FLANC","FLEUR","FONCE","FORCE","FORUM","FOSSE","FOYER","FRAIS",
+"FRANC","FREIN","FRUIT","FUGUE","FUMEE","FUSIL","GAGNE","GARDE","GENRE","GLOBE",
+"GOUTE","GRACE","GRADE","GRAIN","GRAND","GRAVE","GREVE","GRILL","GUIDE","HABIT",
+"HARDI","HAUTE","HIVER","HOMME","HOTEL","HUILE","IDEAL","IMAGE","INDEX","INDUS",
+"JETER","JEUNE","JOUER","JOUET","JOURS","JUGER","KARMA","KAYAK","KIOSK","KOALA",
+"LAMPE","LANCE","LARGE","LASER","LEGAL","LIVRE","LOGER","LOUPE","MAGIE","MAINS",
+"MAIRE","MANGE","MARIN","MASSE","MATCH","MEDAL","MERCI","METRE","MONDE","MORAL",
+"MOTIF","MOULE","NAGER","NAIVE","NATIF","NAVAL","NERVE","NOBLE","NOIRE","NOMME",
+"NORME","NOTER","NUAGE","OASIS","OBEIR","OBJET","ODEUR","OFFRE","OMBRE","ONDES",
+"OPERA","ORAGE","ORDRE","ORGUE","OUVRE","PAIRE","PANNE","PARLE","PARTI","PAUSE",
+"PECHE","PEINT","PENSE","PERDU","PHOTO","PIECE","PLAGE","PLUIE","QUAIS","QUART",
+"QUETE","QUEUE","RADAR","RAISON","RANGE","RAYON","REGLE","REINE","REPOS","ROBOT",
+"ROUGE","ROUTE","SABLE","SALON","SAUTE","SCENE","SCORE","SERIE","SIROP","SOMME",
+"SPORT","TABLE","TACHE","TAILLE","TARIF","TEMPS","TEXTE","THEME","TIGRE","TITRE",
+"TOTAL","TRACE","TRAIN","ULTRA","UNION","UNITE","USAGE","USINE","UTILE","VALSE",
+"VARIE","VASTE","VENIR","VENTE","VERBE","VERRE","VILLE","VINYL","VIRUS","VITAL",
+"WAGON","XENON","YACHT","YOGAS","ZEBRE","ZENIT","ZEROS","ZONES"
+];
+
+const WORDS_6 = [
+"ABIMER","ABUSER","ACCORD","ACTEUR","ACTION","ADOPTE","ADORER","AGENCE","AJOUTE",
+"ALERTE","ALPINE","AMENER","AMITIE","AMUSER","ANIMAL","ANNEES","APPORT","ARRIVE",
+"ASSAUT","ASSURE","AUTEUR","AVANCE","AVENIR","AVIONS","BALADE","BARQUE","BEAUTE",
+"BELIER","BESOIN","BILLET","BLONDE","BOUCLE","BOUGER","BOUTON","BRANCH","BRILLE",
+"BRULER","BUREAU","CABANE","CADEAU","CALMER","CAMION","CANARD","CARNET","CARREE",
+"CASSER","CENTRE","CHAINE","CHALET","CHANCE","CHEMIN","CHOISI","CLIENT","COLERE",
+"COMBAT","COMPTE","CONFIE","CONTRA","CORAIL","COUPER","COURSE","CREUSE","CROIRE",
+"CUISIN","CULTUR","DANGER","DEMAIN","DEPART","DESERT","DESIRE","DEVOIR","DIALOG",
+"DONNER","DOUCHE","DOUTER","DURANT","ECOLES","ECRIRE","EFFORT","EGLISE","ELEVEE",
+"EMPIRE","ENCORE","ENTRER","ENVERS","FACILE","FAIBLE","FAMEUX","FAMILI","FERMER",
+"FIGURE","FILMER","FINALE","FLECHE","FLORAL","FORCER","FORMER","FRANCE","GAGNER",
+"GARDER","GENIAL","GESTES","GLACER","GLOBAL","GOUTER","GRANDI","GRAVIR","GUIDER",
+"HABILE","HAZARD","HEURES","HUMAIN","IDEALE","IGNORE","IMPACT","IMPORT","INDICE",
+"INVITE","JARDIN","JASMIN","JEUNES","JOUETS","KARATE","KERMES","LANCER","LARGER",
+"LECONS","LEGERE","LIGNES","LIVREE","LONGER","LUMIER","MAISON","MANQUE","MARCHE",
+"MARQUE","MASQUE","MEDIAN","MENTAL","MERITE","MESURE","MOBILE","MODELE","MONTEE",
+"NATION","NATURE","NAVIRE","NEIGES","NIVEAU","NOMBRE","NOTION","NOUVEL","NUANCE",
+"OBJETS","OBLIGE","OBSCUR","OFFRIR","OISEAU","OPPOSE","ORAGEE","ORDRES","ORGANI",
+"OUVERT","PALAIS","PANIER","PARLER","PARTIR","PASSER","PATINE","PECHER","PENSER",
+"PERDRE","PERMIS","PIERRE","PLACER","PLANTE","QUATRE","QUILLE","QUOTAS","RACINE",
+"RANGER","RAPIDE","RARETE","RECENT","REGLES","RELIEF","REMPLI","RENDRE","RESEAU",
+"RESTER","RETOUR","RIVIER","SABLER","SAISON","SALUER","SAVOIR","SECRET","SENTIR",
+"SERIES","SERVIR","SIGNER","SIMPLE","SOCIET","SORTIR","TABLES","TAILLE","TARIFS",
+"TEMOIN","TERRES","TESTER","TEXTER","TITRES","TOURNE","TRAJET","TRAVAI","TROUVE",
+"ULTRAS","USAGES","USINES","VALEUR","VALIDE","VARIER","VENDRE","VENTES","VERITE",
+"VERSER","VIABLE","VILLES","VIOLET","VISAGE","VIVANT","WAGONS","XENONS","YACHTS",
+"ZEBRES","ZENITH","ZODIAC","ZONAGE"
+];
 
 /* =========================
-   VARIABLES
+   LOGIQUE DU JEU
 ========================= */
 
 let WORD_LENGTH = 5;
@@ -124,41 +181,29 @@ let row = 0;
 let col = 0;
 let gameOver = false;
 let keyStates = {};
-
 const MAX_ROWS = 6;
 
 const board = document.getElementById("board");
 const keyboard = document.getElementById("keyboard");
 const modeSelect = document.getElementById("modeSelect");
 
-/* =========================
-   START GAME
-========================= */
-
 modeSelect.addEventListener("change", startGame);
 
 function startGame(){
-
   WORD_LENGTH = parseInt(modeSelect.value);
   const list = WORD_LENGTH === 5 ? WORDS_5 : WORDS_6;
-
   solution = list[Math.floor(Math.random()*list.length)];
 
   row = 0;
   col = 0;
   gameOver = false;
   keyStates = {};
-
   grid = Array.from({length:MAX_ROWS},()=>Array(WORD_LENGTH).fill(""));
 
   drawBoard();
   drawKeyboard();
   selectTile(0,0);
 }
-
-/* =========================
-   BOARD
-========================= */
 
 function drawBoard(){
   board.innerHTML="";
@@ -183,14 +228,9 @@ function selectTile(r,c){
   document.getElementById(`t-${r}-${c}`).classList.add("active");
 }
 
-/* =========================
-   KEYBOARD
-========================= */
-
 function drawKeyboard(){
   keyboard.innerHTML="";
   const KEYS=["AZERTYUIOP","QSDFGHJKLM","WXCVBN"];
-
   KEYS.forEach(line=>{
     const r=document.createElement("div");
     r.className="kb-row";
@@ -203,38 +243,25 @@ function drawKeyboard(){
     });
     keyboard.appendChild(r);
   });
-
   const r=document.createElement("div");
   r.className="kb-row";
-
   const enter=document.createElement("div");
   enter.className="key wide";
   enter.textContent="Entrer";
   enter.onclick=check;
-
   const back=document.createElement("div");
   back.className="key wide";
   back.textContent="⌫";
   back.onclick=backspace;
-
   r.append(enter,back);
   keyboard.appendChild(r);
 }
 
-/* =========================
-   INPUT
-========================= */
-
 function type(letter){
   if(gameOver || col>=WORD_LENGTH) return;
-
   grid[row][col]=letter;
   document.getElementById(`t-${row}-${col}`).textContent=letter;
-
-  if(col<WORD_LENGTH-1){
-    col++;
-    selectTile(row,col);
-  }
+  if(col<WORD_LENGTH-1){ col++; selectTile(row,col); }
 }
 
 function backspace(){
@@ -244,25 +271,17 @@ function backspace(){
   selectTile(row,col);
 }
 
-/* =========================
-   WORDLE LOGIC
-========================= */
-
 function check(){
-
-  if(gameOver) return;
-  if(grid[row].includes("")) return;
+  if(gameOver || grid[row].includes("")) return;
 
   const guess = grid[row].join("");
   const result = Array(WORD_LENGTH).fill("gray");
-
   const letterCount = {};
 
   for(let l of solution){
     letterCount[l]=(letterCount[l]||0)+1;
   }
 
-  // PASSAGE VERT
   for(let i=0;i<WORD_LENGTH;i++){
     if(guess[i]===solution[i]){
       result[i]="green";
@@ -270,7 +289,6 @@ function check(){
     }
   }
 
-  // PASSAGE JAUNE
   for(let i=0;i<WORD_LENGTH;i++){
     if(result[i]==="gray" && letterCount[guess[i]]>0){
       result[i]="yellow";
@@ -278,7 +296,6 @@ function check(){
     }
   }
 
-  // Appliquer
   for(let i=0;i<WORD_LENGTH;i++){
     document.getElementById(`t-${row}-${i}`).classList.add(result[i]);
     updateKeyboard(guess[i],result[i]);
@@ -290,8 +307,7 @@ function check(){
     return;
   }
 
-  row++;
-  col=0;
+  row++; col=0;
 
   if(row===MAX_ROWS){
     gameOver=true;
@@ -301,18 +317,10 @@ function check(){
   }
 }
 
-/* =========================
-   KEYBOARD UPDATE
-========================= */
-
 function updateKeyboard(letter,color){
-
-  const priority = {gray:1,yellow:2,green:3};
-
-  if(!keyStates[letter] || priority[color] > priority[keyStates[letter]]){
-
+  const priority={gray:1,yellow:2,green:3};
+  if(!keyStates[letter] || priority[color]>priority[keyStates[letter]]){
     keyStates[letter]=color;
-
     document.querySelectorAll(".key").forEach(k=>{
       if(k.textContent===letter){
         k.className="key "+color;
@@ -320,10 +328,6 @@ function updateKeyboard(letter,color){
     });
   }
 }
-
-/* =========================
-   PHYSICAL KEYBOARD
-========================= */
 
 window.addEventListener("keydown",e=>{
   if(e.key==="Enter") check();
@@ -334,6 +338,5 @@ window.addEventListener("keydown",e=>{
 startGame();
 
 </script>
-
 </body>
 </html>
