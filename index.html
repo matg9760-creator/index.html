@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Wordle FR</title>
+<title>Wordle FR Correct</title>
 
 <style>
 :root{
@@ -17,7 +17,7 @@ body{
   font-family:Arial, sans-serif;
   display:flex;
   justify-content:center;
-  background:#ffffff;
+  background:white;
 }
 
 .app{
@@ -50,12 +50,10 @@ body{
   font-size:24px;
   font-weight:bold;
   cursor:pointer;
-  user-select:none;
 }
 
 .tile.active{
   border-color:#5383ff;
-  box-shadow:0 0 0 2px rgba(83,131,255,.4) inset;
 }
 
 .tile.green{background:var(--green);color:white;border-color:var(--green)}
@@ -79,7 +77,6 @@ body{
   border-radius:6px;
   cursor:pointer;
   font-weight:bold;
-  user-select:none;
 }
 
 .key.green{background:var(--green);color:white}
@@ -111,17 +108,8 @@ body{
    DICTIONNAIRES
 ========================= */
 
-const WORDS_5 = [
-"SALON","TABLE","PORTE","PLAGE","FLEUR",
-"TRAIN","ARBRE","IMAGE","TERRE","CHAUD",
-"FRUIT","BRAVE","MANGE","MONDE","NAGER",
-"ROUTE","SPORT","SABLE","VIRUS","ZEBRE"
-];
-
-const WORDS_6 = [
-"MAISON","JARDIN","SOLEIL","ROUTES","BUREAU",
-"VOYAGE","ANIMAL","ORANGE","SAISON","TRAJET"
-];
+const WORDS_5 = ["SALON","TABLE","PORTE","PLAGE","FLEUR","TRAIN","ARBRE","IMAGE","TERRE","CHAUD"];
+const WORDS_6 = ["MAISON","JARDIN","SOLEIL","ROUTES","BUREAU","VOYAGE","ANIMAL","ORANGE","SAISON","TRAJET"];
 
 /* =========================
    VARIABLES
@@ -139,22 +127,16 @@ const board = document.getElementById("board");
 const keyboard = document.getElementById("keyboard");
 const modeSelect = document.getElementById("modeSelect");
 
-/* =========================
-   START GAME
-========================= */
-
 modeSelect.addEventListener("change", startGame);
 
 function startGame(){
-
   WORD_LENGTH = parseInt(modeSelect.value);
   const list = WORD_LENGTH === 5 ? WORDS_5 : WORDS_6;
   solution = list[Math.floor(Math.random()*list.length)];
 
-  row = 0;
-  col = 0;
-  gameOver = false;
-
+  row=0;
+  col=0;
+  gameOver=false;
   grid = Array.from({length:MAX_ROWS},()=>Array(WORD_LENGTH).fill(""));
 
   drawBoard();
@@ -250,43 +232,45 @@ function backspace(){
 }
 
 /* =========================
-   CHECK WORD
+   WORDLE LOGIC CORRECTE
 ========================= */
 
 function check(){
   if(grid[row].includes("")) return;
 
   const guess = grid[row].join("");
-  const sol = solution.split("");
+  const solutionArray = solution.split("");
   const result = Array(WORD_LENGTH).fill("gray");
 
-  // GREEN PASS
+  // Compter occurrences solution
+  const letterCount = {};
+  solutionArray.forEach(l=>{
+    letterCount[l] = (letterCount[l] || 0) + 1;
+  });
+
+  // PASSAGE VERT
   for(let i=0;i<WORD_LENGTH;i++){
-    if(guess[i]===sol[i]){
-      result[i]="green";
-      sol[i]=null;
+    if(guess[i] === solution[i]){
+      result[i] = "green";
+      letterCount[guess[i]]--;
     }
   }
 
-  // YELLOW PASS
+  // PASSAGE JAUNE
   for(let i=0;i<WORD_LENGTH;i++){
-    if(result[i]==="gray"){
-      const idx=sol.indexOf(guess[i]);
-      if(idx!==-1){
-        result[i]="yellow";
-        sol[idx]=null;
-      }
+    if(result[i] === "gray" && letterCount[guess[i]] > 0){
+      result[i] = "yellow";
+      letterCount[guess[i]]--;
     }
   }
 
-  // APPLY COLORS
+  // Appliquer couleurs
   for(let i=0;i<WORD_LENGTH;i++){
-    const tile=document.getElementById(`t-${row}-${i}`);
-    tile.classList.add(result[i]);
-    colorKey(guess[i],result[i]);
+    document.getElementById(`t-${row}-${i}`).classList.add(result[i]);
+    updateKeyboardColor(guess[i], result[i]);
   }
 
-  if(guess===solution){
+  if(guess === solution){
     gameOver=true;
     setTimeout(()=>alert("Bravo ! 🎉"),200);
     return;
@@ -304,29 +288,28 @@ function check(){
 }
 
 /* =========================
-   COLOR KEYBOARD
+   PRIORITÉ CLAVIER CORRECTE
 ========================= */
 
-function colorKey(letter,color){
-  document.querySelectorAll(".key").forEach(key=>{
-    if(key.textContent!==letter) return;
+const keyStates = {}; // mémorise meilleur état
 
-    if(color==="green"){
-      key.className="key green";
-    }
-    else if(color==="yellow" && !key.classList.contains("green")){
-      key.className="key yellow";
-    }
-    else if(color==="gray"
-      && !key.classList.contains("green")
-      && !key.classList.contains("yellow")){
-      key.className="key gray";
-    }
-  });
+function updateKeyboardColor(letter, color){
+
+  const priority = {gray:1, yellow:2, green:3};
+
+  if(!keyStates[letter] || priority[color] > priority[keyStates[letter]]){
+    keyStates[letter] = color;
+
+    document.querySelectorAll(".key").forEach(key=>{
+      if(key.textContent === letter){
+        key.className = "key " + color;
+      }
+    });
+  }
 }
 
 /* =========================
-   PHYSICAL KEYBOARD
+   CLAVIER PHYSIQUE
 ========================= */
 
 window.addEventListener("keydown",e=>{
